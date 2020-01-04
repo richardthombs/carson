@@ -43,17 +43,20 @@ namespace Experiment1
 
 		public static async Task GetBattery(Environment env, CommandMatch match)
 		{
-			foreach (var info in env.ZWaveService.Nodes)
-			{
-				Console.Write($"Node {info.Node}: ");
-				if (info.HasBattery == null) Console.WriteLine("unknown");
-				else if (info.HasBattery == true)
-				{
-					if (info.Battery != null) Console.WriteLine($"{info.Battery}");
-					else Console.WriteLine($"battery state unknown");
-				}
-				else Console.WriteLine("no battery");
-			}
+            await Task.Run(() =>
+            {
+                foreach (var info in env.ZWaveService.Nodes)
+                {
+                    Console.Write($"Node {info.Node}: ");
+                    if (info.HasBattery == null) Console.WriteLine("unknown");
+                    else if (info.HasBattery == true)
+                    {
+                        if (info.Battery != null) Console.WriteLine($"{info.Battery}");
+                        else Console.WriteLine($"battery state unknown");
+                    }
+                    else Console.WriteLine("no battery");
+                }
+            });
 		}
 
 		public static async Task ShowArea(Environment env, CommandMatch match)
@@ -187,7 +190,8 @@ namespace Experiment1
 			var node = env.ZWaveService.GetNode(nodeID);
 
 			var config = node.Node.GetCommandClass<Configuration>();
-			await config.Set(param, value, false, 0, CancellationToken.None);
+            throw new NotImplementedException();
+			//await config.Set(param, value, false, 0, CancellationToken.None);
 		}
 
 		public static List<Command> GetVocab()
@@ -211,14 +215,14 @@ namespace Experiment1
 						"exit",
 						"quit"
 					},
-					Action = async (env, x) => { env.Quit = true; }
+					Action = async (env, x) => { await Task.Run(() => env.Quit = true); }
 				},
 				new Command
 				{
 					Patterns = new List<string>{"verbose" },
 					Action = async (env, x) =>
 					{
-						env.ZWaveService.Verbose = true;
+                        await Task.Run(() => env.ZWaveService.Verbose = true);
 						Console.WriteLine("OK, all events will be reported");
 					}
 				},
@@ -227,7 +231,7 @@ namespace Experiment1
 					Patterns = new List<string>{"quiet" },
 					Action = async (env, x) =>
 					{
-						env.ZWaveService.Verbose = false;
+                        await Task.Run(() => env.ZWaveService.Verbose = false);
 						Console.WriteLine("OK, I won't tell you about incomming events");
 					}
 				},
@@ -355,7 +359,7 @@ namespace Experiment1
 					},
 					Action = async (env,x) =>
 					{
-						env.Areas.Create(x.Parameters["value"]);
+                        await Task.Run(() => env.Areas.Create(x.Parameters["value"]));
 					}
 				},
 				new Command
@@ -366,7 +370,7 @@ namespace Experiment1
 					},
 					Action = async (env,x) =>
 					{
-						env.Areas.Add(x.Parameters["value"], x.Parameters["area"]);
+						await Task.Run(() => env.Areas.Add(x.Parameters["value"], x.Parameters["area"]));
 					}
 				}
 			};

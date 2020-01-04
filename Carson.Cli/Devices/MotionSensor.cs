@@ -103,12 +103,9 @@ namespace Experiment1
 
 			OnMotionDetected?.Invoke(this, State);
 
-			if (tokenSource != null)
-			{
-				tokenSource.Cancel();
-			}
-
+			tokenSource?.Cancel();
 			tokenSource = new CancellationTokenSource();
+
 			var task = Task.Delay(Duration, tokenSource.Token).ContinueWith(x =>
 			{
 				if (!x.IsCanceled) MotionCeased(true);

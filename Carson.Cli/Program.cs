@@ -136,7 +136,7 @@ namespace Experiment1
 				}
 			};
 
-			var temp21 = new TemperatureSensor(new ZWaveTemperatureDriver(env.ZWaveService.GetNode(21).Node))
+			var temp25 = new TemperatureSensor(new ZWaveTemperatureDriver(env.ZWaveService.GetNode(25).Node))
 			{
 				Name = "temperature",
 				Plural = "temperatures",
@@ -150,7 +150,7 @@ namespace Experiment1
 				OnUpdate = (d, v) => LogTemperature(d, v)
 			};
 
-			var sensor21_motion = new MotionSensor(new ZWaveAlarmDriver(env.ZWaveService.GetNode(21).Node))
+			var sensor25_motion = new MotionSensor(new ZWaveAlarmDriver(env.ZWaveService.GetNode(25).Node))
 			{
 				Name = "motion",
 				Plural = "motion sensors",
@@ -290,7 +290,7 @@ namespace Experiment1
 					}
 				}
 			};
-			env.Areas.AddDevice("kitchen", plug2, temp21, sensor21_motion, wallmote23);
+			env.Areas.AddDevice("kitchen", plug2, temp25, sensor25_motion, wallmote23);
 			env.Areas.AddDevice("study", wallmote18, zipato10, switch13);
 			env.Areas.AddDevice("porch", everspring8, zipato14);
 			env.Areas.AddDevice("snug", everspring11);

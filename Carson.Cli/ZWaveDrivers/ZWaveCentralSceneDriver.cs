@@ -21,7 +21,7 @@ namespace Experiment1.ZWaveDrivers
 
 		private void CentralScene_Changed(object sender, ReportEventArgs<CentralSceneReport> e)
 		{
-			OnCentralScene?.Invoke(e.Report.Scene);
+			OnCentralScene?.Invoke(e.Report.SceneNumber);
 		}
 	}
 }
