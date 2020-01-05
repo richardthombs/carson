@@ -91,6 +91,11 @@ namespace Experiment1
 			wallmote2.Changed += wallMote2Changed;
 		}
 
+		public List<(NodeState, Node)> FindNodes(Predicate<NodeState> predicate)
+		{
+			return nodeStates.Where(x => predicate(x.Value)).Select(x => (x.Value, nodes[x.Key])).ToList();
+		}
+
 		private void wallMote1Changed(object sender, ReportEventArgs<CentralSceneReport> e)
 		{
 			Console.WriteLine($"Wallmote 1 button {e.Report.SceneNumber} pressed");

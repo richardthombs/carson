@@ -123,6 +123,7 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="CommandParser.cs" />
     <Compile Include="LinqExtensions.cs" />
     <Compile Include="NodeState.cs" />
     <Compile Include="Program.cs" />
