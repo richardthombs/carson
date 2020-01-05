@@ -36,6 +36,9 @@
     <Reference Include="Microsoft.Win32.Registry, Version=4.0.1.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
       <HintPath>..\packages\Microsoft.Win32.Registry.4.3.0\lib\net46\Microsoft.Win32.Registry.dll</HintPath>
     </Reference>
+    <Reference Include="Newtonsoft.Json, Version=12.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
+      <HintPath>..\packages\Newtonsoft.Json.12.0.3\lib\net45\Newtonsoft.Json.dll</HintPath>
+    </Reference>
     <Reference Include="RJCP.SerialPortStream, Version=2.1.4.0, Culture=neutral, PublicKeyToken=5f5e7b70c6a74deb, processorArchitecture=MSIL">
       <HintPath>..\packages\SerialPortStream.2.1.4\lib\net45\RJCP.SerialPortStream.dll</HintPath>
     </Reference>
@@ -120,49 +123,11 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Area.cs" />
-    <Compile Include="AreaCollection.cs" />
-    <Compile Include="BasicState.cs" />
-    <Compile Include="Command.cs" />
-    <Compile Include="CommandLibrary.cs" />
-    <Compile Include="CommandParser.cs" />
-    <Compile Include="CommandRunner.cs" />
-    <Compile Include="ConsoleLogger.cs" />
-    <Compile Include="Devices\DummySwitch.cs" />
-    <Compile Include="Devices\GenericDevice.cs" />
-    <Compile Include="Devices\SimpleSensorState.cs" />
-    <Compile Include="Devices\TemperatureSensor.cs" />
-    <Compile Include="Environment.cs" />
-    <Compile Include="IDevice.cs" />
-    <Compile Include="IDeviceState.cs" />
-    <Compile Include="ILogService.cs" />
-    <Compile Include="Devices\Light.cs" />
-    <Compile Include="ZWaveDrivers\IZWaveAlarmDriver.cs" />
-    <Compile Include="ZWaveDrivers\IZWaveAssociationDriver.cs" />
-    <Compile Include="ZWaveDrivers\IZWaveBasicDriver.cs" />
-    <Compile Include="ZWaveDrivers\IZWaveCentralSceneDriver.cs" />
-    <Compile Include="ZWaveDrivers\IZWaveSwitchBinaryDriver.cs" />
-    <Compile Include="ZWaveDrivers\IZWaveSwitchColorDriver.cs" />
-    <Compile Include="ZWaveDrivers\IZWaveSwitchMultiLevelDriver.cs" />
     <Compile Include="LinqExtensions.cs" />
-    <Compile Include="Devices\MotionSensor.cs" />
-    <Compile Include="MotionSensorState.cs" />
-    <Compile Include="MotionState.cs" />
+    <Compile Include="NodeState.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="SwitchState.cs" />
-    <Compile Include="ZWaveDrivers\IZWaveTemperatureDriver.cs" />
-    <Compile Include="ZWaveDrivers\IZWaveWakeUpDriver.cs" />
-    <Compile Include="ZWaveDrivers\ZWaveAlarmDriver.cs" />
-    <Compile Include="ZWaveDrivers\ZWaveAssociationDriver.cs" />
-    <Compile Include="ZWaveDrivers\ZWaveBasicDriver.cs" />
-    <Compile Include="ZWaveDrivers\ZWaveCentralSceneDriver.cs" />
-    <Compile Include="ZWaveDrivers\ZWaveSwitchColorDriver.cs" />
-    <Compile Include="ZWaveDrivers\ZWaveSwitchMultiLevelDriver.cs" />
-    <Compile Include="ZWaveDrivers\ZWaveTemperatureDriver.cs" />
-    <Compile Include="ZWaveDrivers\ZWaveWakeUpDriver.cs" />
-    <Compile Include="ZWaveService.cs" />
-    <Compile Include="ZWaveDrivers\ZWaveSwitchBinaryDriver.cs" />
+    <Compile Include="ZWaveNetwork.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
