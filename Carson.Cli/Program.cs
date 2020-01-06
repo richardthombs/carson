@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Threading.Tasks;
 using System.Collections.Generic;
+using System.Linq;
 
 using Newtonsoft.Json;
 
@@ -42,8 +43,11 @@ namespace Experiment1
 			var network = new ZWaveNetwork(zwave);
 			Task.Run(() => network.Start()).Wait();
 
+			List<Area> areas = new List<Area>();
+
 			bool quit = false;
-			var grammar = new List<Command>
+			var grammar = new List<Command>();
+			grammar = new List<Command>
 			{
 				new Command
 				{
@@ -59,7 +63,6 @@ namespace Experiment1
 								if (t.Item1.CommandClasses.Contains(CommandClass.SwitchBinary)) t.Item2.GetCommandClass<SwitchBinary>().Set(true);
 								else if (t.Item1.CommandClasses.Contains(CommandClass.SwitchMultiLevel)) t.Item2.GetCommandClass<SwitchMultiLevel>().Set(255);
 							});
-							Console.WriteLine($"OK I turned {p["something"]} on");
 						}
 					}
 				},
@@ -77,23 +80,52 @@ namespace Experiment1
 								if (t.Item1.CommandClasses.Contains(CommandClass.SwitchBinary)) t.Item2.GetCommandClass<SwitchBinary>().Set(false);
 								else if (t.Item1.CommandClasses.Contains(CommandClass.SwitchMultiLevel)) t.Item2.GetCommandClass<SwitchMultiLevel>().Set(0);
 							});
-							Console.WriteLine($"OK I turned {p["something"]} off");
 						}
 					}
 				},
 				new Command
 				{
-					Pattern = "set node {node} to {value}",
-					Action = p => Console.WriteLine($"{p["node"]} = {p["value"]}")
+					Pattern = "create area {area}",
+					Action = p =>
+					{
+						if (areas.Exists(a => String.Compare(a.Name,p["area"],true) == 0))
+						{
+							Console.WriteLine($"Area \"{p["area"]}\" already exists");
+						}
+						else
+						{
+							areas.Add(new Area
+							{
+								Name = p["area"]
+							});
+						}
+					}
 				},
-				new Command { Pattern = "create area {area}" },
-				new Command { Pattern = "add area {area1} to {area2}" },
+				new Command
+				{
+					Pattern = "add area {area1} to {area2}",
+					Action = p =>
+					{
+						var area1 = FindArea(p["area1"], areas);
+						var area2 = FindArea(p["area2"], areas);
+						if (area1 == null) Console.WriteLine($"Area \"{p["area1"]}\" does not exist");
+						else if (area2 == null) Console.WriteLine($"Area \"{p["area2"]}\" does not exist");
+						else
+						{
+							if (area1.Parent != null) area1.Parent.Children.Remove(area1);
+							else areas.Remove(area1);
+							area1.Parent = area2;
+							if (area2.Children == null) area2.Children=new List<Area>();
+							area2.Children.Add(area1);
+						}
+					}
+				},
 				new Command
 				{
 					Pattern = "list nodes",
 					Action = p => network.FindNodes(ns => !String.IsNullOrEmpty(ns.Name)).ForEach( t =>
 					{
-						Console.WriteLine($"Node {t.Item2}: {t.Item1.Name}");
+						Console.WriteLine($"Node {t.Item2}: {t.Item1.Name.PadRight(20)} {t.Item1.LastContact.Ago()}");
 					})
 				},
 				new Command
@@ -101,16 +133,26 @@ namespace Experiment1
 					Pattern = "list batteries",
 					Action = p =>
 					{
-						network.FindNodes(ns => ns.CommandClasses?.Contains(CommandClass.Battery) ?? false).ForEach(x =>
+						network.FindNodes(ns => ns.CommandClasses?.Contains(CommandClass.Battery) ?? false).ForEach(t =>
 						{
-							Console.WriteLine($"{x.Item1.Name}: {(x.Item1.BatteryReport != null? x.Item1.BatteryReport.Data.ToString() : "Unknown")}");
+							Console.WriteLine($"Node {t.Item2}: {t.Item1.Name.PadRight(20)} {(t.Item1.BatteryReport != null? t.Item1.BatteryReport.Data.ToString() : "Unknown").PadRight(15)} {t.Item1.BatteryReport.Timestamp.Ago()}");
 						});
 					}
 				},
 				new Command
 				{
+					Pattern = "list areas",
+					Action = p=> ListAreas(areas)
+				},
+				new Command
+				{
 					Pattern = "quit",
 					Action = p => quit = true
+				},
+				new Command
+				{
+					Pattern = "help",
+					Action = p => grammar.ForEach(x => Console.WriteLine(x.Pattern))
 				}
 			};
 
@@ -122,13 +164,42 @@ namespace Experiment1
 				var command = Console.ReadLine();
 				if (!String.IsNullOrWhiteSpace(command))
 				{
-					if (!parser.Parse(command))
-					{
-						Console.WriteLine("What?");
-					}
+					if (parser.Parse(command)) Console.WriteLine("\nOK");
+					else Console.WriteLine("\nWhat?");
 				}
 			}
 			zwave.Close();
 		}
+
+		static Area FindArea(string name, List<Area> areas)
+		{
+			if (areas == null) return null;
+			foreach (var area in areas)
+			{
+				if (String.Compare(area.Name, name, true) == 0) return area;
+				var found = FindArea(name, area.Children);
+				if (found != null) return found;
+			}
+			return null;
+		}
+
+		static void ListAreas(List<Area> areas, int depth=0)
+		{
+			if (areas == null) return;
+
+			foreach (var area in areas)
+			{
+				Console.WriteLine($"{new String(' ', depth)}{area.Name}");
+				ListAreas(area.Children, depth + 1);
+			}
+		}
 	}
+
+	class Area
+	{
+		public string Name;
+		public Area Parent;
+		public List<Area> Children;
+	}
+
 }

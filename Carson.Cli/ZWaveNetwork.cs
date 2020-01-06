@@ -177,7 +177,7 @@ namespace Experiment1
 				}
 				if (state.FailCount >= 5 && !state.LastFailed.IsOlderThan(TimeSpan.FromDays(1)))
 				{
-					Console.WriteLine($"Won't query node {n} because it has failed {state.FailCount} times, most recently {(DateTimeOffset.UtcNow - state.LastFailed):d\\d\\ h\\h\\ m\\m} ago");
+					Console.WriteLine($"Won't query node {n} because it has failed {state.FailCount} times, most recently {state.LastFailed.Ago()}");
 					continue;
 				}
 
@@ -271,7 +271,7 @@ namespace Experiment1
 
 		void ReceiveReport(NodeReport r)
 		{
-			Console.WriteLine($"{DateTimeOffset.Now:t} {r.GetType().Name} from node {r.Node} received: [{r}]");
+			Console.WriteLine($"{DateTimeOffset.Now:t} Report from node {r.Node}: {r.GetType().Name} [{r}]");
 
 			lock (nodeStates)
 			{
@@ -313,11 +313,6 @@ namespace Experiment1
 				var json = File.ReadAllText("state.json");
 				this.nodeStates = JsonConvert.DeserializeObject<Dictionary<byte, NodeState>>(json);
 			}
-		}
-
-		string formatTime(DateTimeOffset dateTime)
-		{
-			return $"{dateTime:t}";
 		}
 	}
 }
