@@ -24,7 +24,7 @@ namespace Experiment1
 			foreach (var c in grammar)
 			{
 				var parameterRegex = new Regex(@"\{([\w]+)\}");
-				var commandPattern = "^" + parameterRegex.Replace(c.Pattern, @"([\w\d ]+)") + "$";
+				var commandPattern = "^" + parameterRegex.Replace(c.Pattern, @"([\w\d' ]+)") + "$";
 				var regex = new Regex(commandPattern, RegexOptions.IgnoreCase);
 				var match = regex.Match(command);
 				if (match.Success)

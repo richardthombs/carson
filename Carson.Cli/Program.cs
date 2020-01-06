@@ -122,6 +122,20 @@ namespace Experiment1
 				},
 				new Command
 				{
+					Pattern = "name node {node} as {name}",
+					Action = p =>
+					{
+
+						var t = network.GetNode(Byte.Parse(p["node"]));
+						if (t.Item1 == null) Console.WriteLine($"Node {p["node"]} does not exist");
+						else
+						{
+							t.Item1.Name = p["name"];
+						}
+					}
+				},
+				new Command
+				{
 					Pattern = "list nodes",
 					Action = p => network.FindNodes(ns => !String.IsNullOrEmpty(ns.Name)).ForEach( t =>
 					{

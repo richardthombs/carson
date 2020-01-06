@@ -57,6 +57,7 @@ namespace Experiment1
 
 			SubscribeAll(nodes);
 
+			/* This is persisted now, but I keep it just so I don't forget and I reset the state
 			nodeStates[1].Name = "Controller";
 			nodeStates[18].Name = "Wallmote 1";
 			nodeStates[23].Name = "Wallmote 2";
@@ -73,7 +74,7 @@ namespace Experiment1
 			nodeStates[11].Name = "Motion sensor 2";
 			nodeStates[12].Name = "Motion sensor 3";
 			nodeStates[2].Name = "Plug 1";
-
+			*/
 
 			wallmote1 = nodes[18].GetCommandClass<CentralScene>();
 			wallmote2 = nodes[23].GetCommandClass<CentralScene>();
@@ -94,6 +95,13 @@ namespace Experiment1
 		public List<(NodeState, Node)> FindNodes(Predicate<NodeState> predicate)
 		{
 			return nodeStates.Where(x => predicate(x.Value)).Select(x => (x.Value, nodes[x.Key])).ToList();
+		}
+
+		public (NodeState, Node) GetNode(byte nodeID)
+		{
+			if (!nodeStates.ContainsKey(nodeID)) return (null,null);
+			if (nodes[nodeID] == null) return (null, null);
+			return (nodeStates[nodeID], nodes[nodeID]);
 		}
 
 		private void wallMote1Changed(object sender, ReportEventArgs<CentralSceneReport> e)
