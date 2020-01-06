@@ -98,7 +98,7 @@ namespace Experiment1
 
 		private void wallMote1Changed(object sender, ReportEventArgs<CentralSceneReport> e)
 		{
-			Console.WriteLine($"Wallmote 1 button {e.Report.SceneNumber} pressed");
+			Console.WriteLine($"{DateTimeOffset.Now:t} Wallmote 1 button {e.Report.SceneNumber} pressed");
 
 			if (e.Report.SceneNumber == 1 || e.Report.SceneNumber == 3)
 			{
@@ -114,7 +114,7 @@ namespace Experiment1
 
 		private void wallMote2Changed(object sender, ReportEventArgs<CentralSceneReport> e)
 		{
-			Console.WriteLine($"Wallmote 2 button {e.Report.SceneNumber} pressed");
+			Console.WriteLine($"{DateTimeOffset.Now:t} Wallmote 2 button {e.Report.SceneNumber} pressed");
 
 			if (e.Report.SceneNumber == 1 || e.Report.SceneNumber == 3)
 			{
@@ -175,7 +175,7 @@ namespace Experiment1
 					Console.WriteLine($"Won't query node {n} until it wakes up");
 					continue;
 				}
-				if (state.FailCount >= 5 && (DateTimeOffset.UtcNow - state.LastFailed) < TimeSpan.FromDays(1))
+				if (state.FailCount >= 5 && !state.LastFailed.IsOlderThan(TimeSpan.FromDays(1)))
 				{
 					Console.WriteLine($"Won't query node {n} because it has failed {state.FailCount} times, most recently {(DateTimeOffset.UtcNow - state.LastFailed):d\\d\\ h\\h\\ m\\m} ago");
 					continue;
@@ -193,7 +193,7 @@ namespace Experiment1
 
 			try
 			{
-				Console.Write($"Querying node {n}...");
+				Console.Write($"{DateTimeOffset.Now:t} Querying node {n}...");
 				var classes = await n.GetSupportedCommandClasses();
 				state.RecordContact();
 				state.CommandClasses = classes.Select(x => x.Class).ToList();
@@ -235,6 +235,12 @@ namespace Experiment1
 				var state = nodeStates[e.Report.Node.NodeID];
 				state.LastWakeUp = DateTimeOffset.UtcNow;
 				if (state.CommandClasses == null) await QueryNode(e.Report.Node);
+
+				if (state.CommandClasses.Contains(ZWave.Channel.CommandClass.Battery) && (state.BatteryReport == null || state.BatteryReport.Timestamp.IsOlderThan(TimeSpan.FromDays(1))))
+				{
+					Console.WriteLine("{DateTimeOffset.Now:t} Requesting battery state...");
+					node.GetCommandClass<Battery>().Get();
+				}
 			};
 
 			var switchBinary = node.GetCommandClass<SwitchBinary>();
@@ -256,12 +262,16 @@ namespace Experiment1
 			centralScene.Changed += (_, e) => ReceiveReport(e.Report);
 
 			var battery = node.GetCommandClass<Battery>();
-			battery.Changed += (_, e) => ReceiveReport(e.Report);
+			battery.Changed += (_, e) =>
+			{
+				ReceiveBatteryReport(e.Report);
+				ReceiveReport(e.Report);
+			};
 		}
 
 		void ReceiveReport(NodeReport r)
 		{
-			Console.WriteLine($"{r.GetType().Name} report of Node {r.Node} changed to [{r}]");
+			Console.WriteLine($"{DateTimeOffset.Now:t} {r.GetType().Name} from node {r.Node} received: [{r}]");
 
 			lock (nodeStates)
 			{
@@ -270,6 +280,21 @@ namespace Experiment1
 			}
 
 			SaveState();
+		}
+
+		void ReceiveBatteryReport(ZWave.CommandClasses.BatteryReport report)
+		{
+			var state = nodeStates[report.Node.NodeID];
+			var r = new Report<BatteryReport>
+			{
+				Timestamp = DateTime.UtcNow,
+				Data = new BatteryReport
+				{
+					IsLow = report.IsLow,
+					Value = report.Value
+				}
+			};
+			state.BatteryReport = r;
 		}
 
 		void SaveState()
@@ -288,6 +313,11 @@ namespace Experiment1
 				var json = File.ReadAllText("state.json");
 				this.nodeStates = JsonConvert.DeserializeObject<Dictionary<byte, NodeState>>(json);
 			}
+		}
+
+		string formatTime(DateTimeOffset dateTime)
+		{
+			return $"{dateTime:t}";
 		}
 	}
 }

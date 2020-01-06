@@ -8,13 +8,23 @@ using ZWave;
 using Newtonsoft.Json.Converters;
 using ZWave.Channel;
 using ZWave.CommandClasses;
+using System.Runtime.InteropServices;
 
 namespace Experiment1
 {
 	class Program
 	{
+		[DllImport("kernel32.dll", CharSet = CharSet.Auto, SetLastError = true)]
+		static extern uint SetThreadExecutionState(uint esFlags);
+		static void KeepAlive()
+		{
+			SetThreadExecutionState(0x00000001 | 0x80000000);
+		}
+
 		static void Main()
 		{
+			KeepAlive();
+
 			JsonConvert.DefaultSettings = () => new JsonSerializerSettings
 			{
 				Formatting = Formatting.Indented,
@@ -41,12 +51,16 @@ namespace Experiment1
 					Action = p =>
 					{
 						var nodes = network.FindNodes(ns => String.Compare(ns.Name, p["something"], true) == 0);
-						nodes.ForEach(t =>
+						if (nodes.Count == 0) Console.WriteLine($"Can't find any nodes called \"{p["something"]}\"");
+						else
 						{
-							if (t.Item1.CommandClasses.Contains(CommandClass.SwitchBinary)) t.Item2.GetCommandClass<SwitchBinary>().Set(true);
-							else if (t.Item1.CommandClasses.Contains(CommandClass.SwitchMultiLevel)) t.Item2.GetCommandClass<SwitchMultiLevel>().Set(255);
-						});
-						Console.WriteLine($"OK I turned {p["something"]} on");
+							nodes.ForEach(t =>
+							{
+								if (t.Item1.CommandClasses.Contains(CommandClass.SwitchBinary)) t.Item2.GetCommandClass<SwitchBinary>().Set(true);
+								else if (t.Item1.CommandClasses.Contains(CommandClass.SwitchMultiLevel)) t.Item2.GetCommandClass<SwitchMultiLevel>().Set(255);
+							});
+							Console.WriteLine($"OK I turned {p["something"]} on");
+						}
 					}
 				},
 				new Command
@@ -55,12 +69,16 @@ namespace Experiment1
 					Action = p =>
 					{
 						var nodes = network.FindNodes(ns => String.Compare(ns.Name, p["something"], true) == 0);
-						nodes.ForEach(t =>
+						if (nodes.Count == 0) Console.WriteLine($"Can't find any nodes called \"{p["something"]}\"");
+						else
 						{
-							if (t.Item1.CommandClasses.Contains(CommandClass.SwitchBinary)) t.Item2.GetCommandClass<SwitchBinary>().Set(false);
-							else if (t.Item1.CommandClasses.Contains(CommandClass.SwitchMultiLevel)) t.Item2.GetCommandClass<SwitchMultiLevel>().Set(0);
-						});
-						Console.WriteLine($"OK I turned {p["something"]} off");
+							nodes.ForEach(t =>
+							{
+								if (t.Item1.CommandClasses.Contains(CommandClass.SwitchBinary)) t.Item2.GetCommandClass<SwitchBinary>().Set(false);
+								else if (t.Item1.CommandClasses.Contains(CommandClass.SwitchMultiLevel)) t.Item2.GetCommandClass<SwitchMultiLevel>().Set(0);
+							});
+							Console.WriteLine($"OK I turned {p["something"]} off");
+						}
 					}
 				},
 				new Command
@@ -68,10 +86,26 @@ namespace Experiment1
 					Pattern = "set node {node} to {value}",
 					Action = p => Console.WriteLine($"{p["node"]} = {p["value"]}")
 				},
+				new Command { Pattern = "create area {area}" },
+				new Command { Pattern = "add area {area1} to {area2}" },
 				new Command
 				{
 					Pattern = "list nodes",
-					Action = p => network.FindNodes(ns => !String.IsNullOrEmpty(ns.Name)).ForEach( t => Console.WriteLine($"{t.Item1.Name}"))
+					Action = p => network.FindNodes(ns => !String.IsNullOrEmpty(ns.Name)).ForEach( t =>
+					{
+						Console.WriteLine($"Node {t.Item2}: {t.Item1.Name}");
+					})
+				},
+				new Command
+				{
+					Pattern = "list batteries",
+					Action = p =>
+					{
+						network.FindNodes(ns => ns.CommandClasses?.Contains(CommandClass.Battery) ?? false).ForEach(x =>
+						{
+							Console.WriteLine($"{x.Item1.Name}: {(x.Item1.BatteryReport != null? x.Item1.BatteryReport.Data.ToString() : "Unknown")}");
+						});
+					}
 				},
 				new Command
 				{
@@ -85,7 +119,6 @@ namespace Experiment1
 			while(!quit)
 			{
 				Console.WriteLine();
-				Console.Write("> ");
 				var command = Console.ReadLine();
 				if (!String.IsNullOrWhiteSpace(command))
 				{

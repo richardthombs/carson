@@ -25,6 +25,8 @@ namespace Experiment1
 
 		public DateTimeOffset? FirstAdded;
 
+		public Report<BatteryReport> BatteryReport;
+
 		public void RecordFailure()
 		{
 			if (FirstFailed == null) FirstFailed = DateTimeOffset.UtcNow;
