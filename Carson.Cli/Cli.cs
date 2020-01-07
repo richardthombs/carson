@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 
+using ZWave;
 using ZWave.Channel;
 using ZWave.CommandClasses;
 
@@ -49,7 +50,7 @@ namespace Experiment1
 					Pattern = "turn {something} on",
 					Action = p =>
 					{
-						var nodes = context.Network.FindNodes(ns => String.Compare(ns.Name, p["something"], true) == 0);
+						var nodes = FindNodesByName(p["something"]);
 						if (nodes.Count == 0) Console.WriteLine($"Can't find any nodes called \"{p["something"]}\"");
 						else
 						{
@@ -68,7 +69,7 @@ namespace Experiment1
 					Pattern = "turn {something} off",
 					Action = p =>
 					{
-						var nodes = context.Network.FindNodes(ns => String.Compare(ns.Name, p["something"], true) == 0);
+						var nodes = FindNodesByName(p["something"]);
 						if (nodes.Count == 0) Console.WriteLine($"Can't find any nodes called \"{p["something"]}\"");
 						else
 						{
@@ -135,6 +136,19 @@ namespace Experiment1
 				},
 				new Command
 				{
+					Pattern = "alias node {node} as {alias}",
+					Action = p =>
+					{
+						var t = context.Network.GetNode(Byte.Parse(p["node"]));
+						if (t.Item1 == null) Console.WriteLine($"Node {p["node"]} does not exist");
+						else
+						{
+							t.Item1.Alias = p["alias"];
+						}
+					}
+				},
+				new Command
+				{
 					Pattern = "list nodes",
 					Action = p => context.Network.FindNodes(ns => !String.IsNullOrEmpty(ns.Name)).ForEach( t =>
 					{
@@ -168,6 +182,11 @@ namespace Experiment1
 					Action = p => grammar.ForEach(x => Console.WriteLine(x.Pattern))
 				}
 			};
+		}
+
+		List<(NodeState, Node)> FindNodesByName(string name)
+		{
+			return context.Network.FindNodes(ns => String.Compare(ns.Name, name, true) == 0 || String.Compare(ns.Alias, name, true) == 0);
 		}
 
 		Area FindArea(string name, List<Area> areas)

@@ -16,10 +16,7 @@ namespace Experiment1
 	{
 		static CentralScene wallmote1;
 		static CentralScene wallmote2;
-		static SwitchBinary studyLight;
-		static SwitchMultiLevel studyBulb;
-		static SwitchMultiLevel porchBulb;
-		static List<SwitchMultiLevel> patioBulbs;
+		static Cli cli;
 
 		static void Main()
 		{
@@ -51,20 +48,11 @@ namespace Experiment1
 
 			wallmote1 = network.nodes[18].GetCommandClass<CentralScene>();
 			wallmote2 = network.nodes[23].GetCommandClass<CentralScene>();
-			studyLight = network.nodes[13].GetCommandClass<SwitchBinary>();
-			studyBulb = network.nodes[10].GetCommandClass<SwitchMultiLevel>();
-			porchBulb = network.nodes[14].GetCommandClass<SwitchMultiLevel>();
-			patioBulbs = new List<SwitchMultiLevel> {
-				network.nodes[15].GetCommandClass<SwitchMultiLevel>(),
-				network.nodes[16].GetCommandClass<SwitchMultiLevel>(),
-				network.nodes[17].GetCommandClass<SwitchMultiLevel>(),
-				network.nodes[24].GetCommandClass<SwitchMultiLevel>(),
-			};
 
 			wallmote1.Changed += wallMote1Changed;
 			wallmote2.Changed += wallMote2Changed;
 
-			var cli = new Cli(env);
+			cli = new Cli(env);
 
 			var autoexec = new List<string>
 			{
@@ -101,32 +89,29 @@ namespace Experiment1
 
 		static void wallMote1Changed(object sender, ReportEventArgs<CentralSceneReport> e)
 		{
-			Console.WriteLine($"{DateTimeOffset.Now:t} Wallmote 1 button {e.Report.SceneNumber} pressed");
+			var button = e.Report.SceneNumber;
+			Console.WriteLine($"{DateTimeOffset.Now:t} Wallmote 1 button {button} pressed");
 
-			if (e.Report.SceneNumber == 1 || e.Report.SceneNumber == 3)
+			switch (button)
 			{
-				studyLight.Set(e.Report.SceneNumber == 1);
-				studyBulb.Set((byte)(e.Report.SceneNumber == 1 ? 255 : 0));
-			}
-
-			if (e.Report.SceneNumber == 2 || e.Report.SceneNumber == 4)
-			{
-				patioBulbs.ForEach(bulb => bulb.Set((byte)(e.Report.SceneNumber == 2 ? 255 : 0)));
+				case 1: cli.Execute("turn study lights on"); break;
+				case 3: cli.Execute("turn study lights off"); break;
+				case 2: cli.Execute("turn patio lights on"); break;
+				case 4: cli.Execute("turn patio lights off"); break;
 			}
 		}
 
 		static void wallMote2Changed(object sender, ReportEventArgs<CentralSceneReport> e)
 		{
-			Console.WriteLine($"{DateTimeOffset.Now:t} Wallmote 2 button {e.Report.SceneNumber} pressed");
+			var button = e.Report.SceneNumber;
+			Console.WriteLine($"{DateTimeOffset.Now:t} Wallmote 2 button {button} pressed");
 
-			if (e.Report.SceneNumber == 1 || e.Report.SceneNumber == 3)
+			switch (button)
 			{
-				porchBulb.Set((byte)(e.Report.SceneNumber == 1 ? 255 : 0));
-			}
-
-			if (e.Report.SceneNumber == 2 || e.Report.SceneNumber == 4)
-			{
-				patioBulbs.ForEach(bulb => bulb.Set((byte)(e.Report.SceneNumber == 2 ? 255 : 0)));
+				case 1: cli.Execute("turn porch light on"); break;
+				case 3: cli.Execute("turn porch light off"); break;
+				case 2: cli.Execute("turn patio lights on"); break;
+				case 4: cli.Execute("turn patio lights off"); break;
 			}
 		}
 	}

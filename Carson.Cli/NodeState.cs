@@ -9,6 +9,7 @@ namespace Experiment1
 	class NodeState
 	{
 		public string Name;
+		public string Alias;
 
 		public DateTimeOffset? FirstFailed;
 		public DateTimeOffset? LastFailed;
