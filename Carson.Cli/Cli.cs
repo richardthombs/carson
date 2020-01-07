@@ -128,10 +128,7 @@ namespace Experiment1
 
 						var t = context.Network.GetNode(Byte.Parse(p["node"]));
 						if (t.Item1 == null) Console.WriteLine($"Node {p["node"]} does not exist");
-						else
-						{
-							t.Item1.Name = p["name"];
-						}
+						else t.Item1.Name = p["name"];
 					}
 				},
 				new Command
@@ -141,10 +138,7 @@ namespace Experiment1
 					{
 						var t = context.Network.GetNode(Byte.Parse(p["node"]));
 						if (t.Item1 == null) Console.WriteLine($"Node {p["node"]} does not exist");
-						else
-						{
-							t.Item1.Alias = p["alias"];
-						}
+						else t.Item1.Alias = p["alias"];
 					}
 				},
 				new Command
@@ -152,7 +146,7 @@ namespace Experiment1
 					Pattern = "list nodes",
 					Action = p => context.Network.FindNodes(ns => !String.IsNullOrEmpty(ns.Name)).ForEach( t =>
 					{
-						Console.WriteLine($"Node {t.Item2}: {t.Item1.Name.PadRight(20)} {t.Item1.LastContact.Ago()}");
+						Console.WriteLine($"Node {t.Item2}: {t.Item1.Name.PadRight(20)} {t.Item1.LastContact.Ago().PadRight(25)} {(t.Item1.Muted? "(Muted)" : "")}");
 					})
 				},
 				new Command
@@ -195,6 +189,26 @@ namespace Experiment1
 				{
 					Pattern = "list areas",
 					Action = p=> ListAreas(context.Areas)
+				},
+				new Command
+				{
+					Pattern = "mute node {node}",
+					Action = p =>
+					{
+						var t = context.Network.GetNode(Byte.Parse(p["node"]));
+						if (t.Item1 == null) Console.WriteLine($"Node {p["node"]} does not exist");
+						else t.Item1.Muted = true;
+					}
+				},
+				new Command
+				{
+					Pattern = "unmute node {node}",
+					Action = p =>
+					{
+						var t = context.Network.GetNode(Byte.Parse(p["node"]));
+						if (t.Item1 == null) Console.WriteLine($"Node {p["node"]} does not exist");
+						else t.Item1.Muted = false;
+					}
 				},
 				new Command
 				{

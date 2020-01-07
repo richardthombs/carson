@@ -250,13 +250,10 @@ namespace Experiment1
 
 		void ReceiveReport(NodeReport r)
 		{
-			Console.WriteLine($"{DateTimeOffset.Now:t} Report from node {r.Node}: {r.GetType().Name} [{r}]");
+			var state = nodeStates[r.Node.NodeID];
+			state.RecordContact();
 
-			lock (nodeStates)
-			{
-				var state = nodeStates[r.Node.NodeID];
-				state.RecordContact();
-			}
+			if (!state.Muted) Console.WriteLine($"{DateTimeOffset.Now:t} Report from node {r.Node}: {r.GetType().Name} [{r}]");
 
 			SaveState();
 		}

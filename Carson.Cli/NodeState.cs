@@ -11,6 +11,8 @@ namespace Experiment1
 		public string Name;
 		public string Alias;
 
+		public bool Muted;
+
 		public DateTimeOffset? FirstFailed;
 		public DateTimeOffset? LastFailed;
 		public int FailCount;
