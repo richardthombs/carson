@@ -14,15 +14,8 @@ namespace Experiment1
 	class ZWaveNetwork
 	{
 		ZWaveController z;
-		Dictionary<byte, NodeState> nodeStates;
-		NodeCollection nodes;
-
-		CentralScene wallmote1;
-		CentralScene wallmote2;
-		SwitchBinary studyLight;
-		SwitchMultiLevel studyBulb;
-		SwitchMultiLevel porchBulb;
-		List<SwitchMultiLevel> patioBulbs;
+		public Dictionary<byte, NodeState> nodeStates;
+		public NodeCollection nodes;
 
 		public ZWaveNetwork(ZWaveController zwave)
 		{
@@ -57,39 +50,6 @@ namespace Experiment1
 
 			SubscribeAll(nodes);
 
-			/* This is persisted now, but I keep it just so I don't forget and I reset the state
-			nodeStates[1].Name = "Controller";
-			nodeStates[18].Name = "Wallmote 1";
-			nodeStates[23].Name = "Wallmote 2";
-			nodeStates[13].Name = "Study light switch";
-			nodeStates[10].Name = "Study bulb";
-			nodeStates[14].Name = "Porch bulb";
-			nodeStates[15].Name = "Patio bulb";
-			nodeStates[16].Name = "Patio bulb";
-			nodeStates[17].Name = "Patio bulb";
-			nodeStates[24].Name = "Patio bulb";
-			nodeStates[22].Name = "Sensor 1";
-			nodeStates[25].Name = "Sensor 2";
-			nodeStates[8].Name = "Motion sensor 1";
-			nodeStates[11].Name = "Motion sensor 2";
-			nodeStates[12].Name = "Motion sensor 3";
-			nodeStates[2].Name = "Plug 1";
-			*/
-
-			wallmote1 = nodes[18].GetCommandClass<CentralScene>();
-			wallmote2 = nodes[23].GetCommandClass<CentralScene>();
-			studyLight = nodes[13].GetCommandClass<SwitchBinary>();
-			studyBulb = nodes[10].GetCommandClass<SwitchMultiLevel>();
-			porchBulb = nodes[14].GetCommandClass<SwitchMultiLevel>();
-			patioBulbs = new List<SwitchMultiLevel> {
-				nodes[15].GetCommandClass<SwitchMultiLevel>(),
-				nodes[16].GetCommandClass<SwitchMultiLevel>(),
-				nodes[17].GetCommandClass<SwitchMultiLevel>(),
-				nodes[24].GetCommandClass<SwitchMultiLevel>(),
-			};
-
-			wallmote1.Changed += wallMote1Changed;
-			wallmote2.Changed += wallMote2Changed;
 		}
 
 		public List<(NodeState, Node)> FindNodes(Predicate<NodeState> predicate)
@@ -102,37 +62,6 @@ namespace Experiment1
 			if (!nodeStates.ContainsKey(nodeID)) return (null,null);
 			if (nodes[nodeID] == null) return (null, null);
 			return (nodeStates[nodeID], nodes[nodeID]);
-		}
-
-		private void wallMote1Changed(object sender, ReportEventArgs<CentralSceneReport> e)
-		{
-			Console.WriteLine($"{DateTimeOffset.Now:t} Wallmote 1 button {e.Report.SceneNumber} pressed");
-
-			if (e.Report.SceneNumber == 1 || e.Report.SceneNumber == 3)
-			{
-				studyLight.Set(e.Report.SceneNumber == 1);
-				studyBulb.Set((byte)(e.Report.SceneNumber == 1? 255 : 0));
-			}
-
-			if (e.Report.SceneNumber == 2 || e.Report.SceneNumber == 4)
-			{
-				patioBulbs.ForEach(bulb => bulb.Set((byte)(e.Report.SceneNumber == 2 ? 255 : 0)));
-			}
-		}
-
-		private void wallMote2Changed(object sender, ReportEventArgs<CentralSceneReport> e)
-		{
-			Console.WriteLine($"{DateTimeOffset.Now:t} Wallmote 2 button {e.Report.SceneNumber} pressed");
-
-			if (e.Report.SceneNumber == 1 || e.Report.SceneNumber == 3)
-			{
-				porchBulb.Set((byte)(e.Report.SceneNumber == 1? 255 : 0));
-			}
-
-			if (e.Report.SceneNumber == 2 || e.Report.SceneNumber == 4)
-			{
-				patioBulbs.ForEach(bulb => bulb.Set((byte)(e.Report.SceneNumber == 2 ? 255 : 0)));
-			}
 		}
 
 		async Task ListNodes(NodeCollection nodes)
@@ -151,7 +80,7 @@ namespace Experiment1
 					Console.WriteLine($"Neighbours = {string.Join(", ", neighbours.Cast<object>().ToArray())}");
 					Console.WriteLine();
 
-					nodeStates.Add(n.NodeID, new NodeState());
+					nodeStates.Add(n.NodeID, new NodeState { Name = $"Node {n.NodeID}" });
 				}
 				var state = nodeStates[n.NodeID];
 
@@ -247,7 +176,7 @@ namespace Experiment1
 				if (state.CommandClasses.Contains(ZWave.Channel.CommandClass.Battery) && (state.BatteryReport == null || state.BatteryReport.Timestamp.IsOlderThan(TimeSpan.FromDays(1))))
 				{
 					Console.WriteLine("{DateTimeOffset.Now:t} Requesting battery state...");
-					node.GetCommandClass<Battery>().Get();
+					await node.GetCommandClass<Battery>().Get();
 				}
 			};
 

@@ -7,7 +7,6 @@ using Newtonsoft.Json;
 
 using ZWave;
 using Newtonsoft.Json.Converters;
-using ZWave.Channel;
 using ZWave.CommandClasses;
 using System.Runtime.InteropServices;
 
@@ -15,12 +14,12 @@ namespace Experiment1
 {
 	class Program
 	{
-		[DllImport("kernel32.dll", CharSet = CharSet.Auto, SetLastError = true)]
-		static extern uint SetThreadExecutionState(uint esFlags);
-		static void KeepAlive()
-		{
-			SetThreadExecutionState(0x00000001 | 0x80000000);
-		}
+		static CentralScene wallmote1;
+		static CentralScene wallmote2;
+		static SwitchBinary studyLight;
+		static SwitchMultiLevel studyBulb;
+		static SwitchMultiLevel porchBulb;
+		static List<SwitchMultiLevel> patioBulbs;
 
 		static void Main()
 		{
@@ -30,7 +29,7 @@ namespace Experiment1
 			{
 				Formatting = Formatting.Indented,
 				NullValueHandling = NullValueHandling.Ignore,
-				Converters = {new StringEnumConverter()}
+				Converters = { new StringEnumConverter() }
 			};
 
 			var zwave = new ZWaveController("COM3");
@@ -43,168 +42,91 @@ namespace Experiment1
 			var network = new ZWaveNetwork(zwave);
 			Task.Run(() => network.Start()).Wait();
 
-			List<Area> areas = new List<Area>();
-
-			bool quit = false;
-			var grammar = new List<Command>();
-			grammar = new List<Command>
+			var env = new Context
 			{
-				new Command
-				{
-					Pattern = "turn {something} on",
-					Action = p =>
-					{
-						var nodes = network.FindNodes(ns => String.Compare(ns.Name, p["something"], true) == 0);
-						if (nodes.Count == 0) Console.WriteLine($"Can't find any nodes called \"{p["something"]}\"");
-						else
-						{
-							nodes.ForEach(t =>
-							{
-								if (t.Item1.CommandClasses.Contains(CommandClass.SwitchBinary)) t.Item2.GetCommandClass<SwitchBinary>().Set(true);
-								else if (t.Item1.CommandClasses.Contains(CommandClass.SwitchMultiLevel)) t.Item2.GetCommandClass<SwitchMultiLevel>().Set(255);
-							});
-						}
-					}
-				},
-				new Command
-				{
-					Pattern = "turn {something} off",
-					Action = p =>
-					{
-						var nodes = network.FindNodes(ns => String.Compare(ns.Name, p["something"], true) == 0);
-						if (nodes.Count == 0) Console.WriteLine($"Can't find any nodes called \"{p["something"]}\"");
-						else
-						{
-							nodes.ForEach(t =>
-							{
-								if (t.Item1.CommandClasses.Contains(CommandClass.SwitchBinary)) t.Item2.GetCommandClass<SwitchBinary>().Set(false);
-								else if (t.Item1.CommandClasses.Contains(CommandClass.SwitchMultiLevel)) t.Item2.GetCommandClass<SwitchMultiLevel>().Set(0);
-							});
-						}
-					}
-				},
-				new Command
-				{
-					Pattern = "create area {area}",
-					Action = p =>
-					{
-						if (areas.Exists(a => String.Compare(a.Name,p["area"],true) == 0))
-						{
-							Console.WriteLine($"Area \"{p["area"]}\" already exists");
-						}
-						else
-						{
-							areas.Add(new Area
-							{
-								Name = p["area"]
-							});
-						}
-					}
-				},
-				new Command
-				{
-					Pattern = "add area {area1} to {area2}",
-					Action = p =>
-					{
-						var area1 = FindArea(p["area1"], areas);
-						var area2 = FindArea(p["area2"], areas);
-						if (area1 == null) Console.WriteLine($"Area \"{p["area1"]}\" does not exist");
-						else if (area2 == null) Console.WriteLine($"Area \"{p["area2"]}\" does not exist");
-						else
-						{
-							if (area1.Parent != null) area1.Parent.Children.Remove(area1);
-							else areas.Remove(area1);
-							area1.Parent = area2;
-							if (area2.Children == null) area2.Children=new List<Area>();
-							area2.Children.Add(area1);
-						}
-					}
-				},
-				new Command
-				{
-					Pattern = "name node {node} as {name}",
-					Action = p =>
-					{
-
-						var t = network.GetNode(Byte.Parse(p["node"]));
-						if (t.Item1 == null) Console.WriteLine($"Node {p["node"]} does not exist");
-						else
-						{
-							t.Item1.Name = p["name"];
-						}
-					}
-				},
-				new Command
-				{
-					Pattern = "list nodes",
-					Action = p => network.FindNodes(ns => !String.IsNullOrEmpty(ns.Name)).ForEach( t =>
-					{
-						Console.WriteLine($"Node {t.Item2}: {t.Item1.Name.PadRight(20)} {t.Item1.LastContact.Ago()}");
-					})
-				},
-				new Command
-				{
-					Pattern = "list batteries",
-					Action = p =>
-					{
-						network.FindNodes(ns => ns.CommandClasses?.Contains(CommandClass.Battery) ?? false).ForEach(t =>
-						{
-							Console.WriteLine($"Node {t.Item2}: {t.Item1.Name.PadRight(20)} {(t.Item1.BatteryReport != null? t.Item1.BatteryReport.Data.ToString() : "Unknown").PadRight(15)} {t.Item1.BatteryReport.Timestamp.Ago()}");
-						});
-					}
-				},
-				new Command
-				{
-					Pattern = "list areas",
-					Action = p=> ListAreas(areas)
-				},
-				new Command
-				{
-					Pattern = "quit",
-					Action = p => quit = true
-				},
-				new Command
-				{
-					Pattern = "help",
-					Action = p => grammar.ForEach(x => Console.WriteLine(x.Pattern))
-				}
+				Network = network,
+				Quit = false,
+				Areas = new List<Area>()
 			};
 
-			var parser = new CommandParser(grammar);
+			wallmote1 = network.nodes[18].GetCommandClass<CentralScene>();
+			wallmote2 = network.nodes[23].GetCommandClass<CentralScene>();
+			studyLight = network.nodes[13].GetCommandClass<SwitchBinary>();
+			studyBulb = network.nodes[10].GetCommandClass<SwitchMultiLevel>();
+			porchBulb = network.nodes[14].GetCommandClass<SwitchMultiLevel>();
+			patioBulbs = new List<SwitchMultiLevel> {
+				network.nodes[15].GetCommandClass<SwitchMultiLevel>(),
+				network.nodes[16].GetCommandClass<SwitchMultiLevel>(),
+				network.nodes[17].GetCommandClass<SwitchMultiLevel>(),
+				network.nodes[24].GetCommandClass<SwitchMultiLevel>(),
+			};
 
-			while(!quit)
+			wallmote1.Changed += wallMote1Changed;
+			wallmote2.Changed += wallMote2Changed;
+
+			var cli = new Cli(env);
+
+			var autoexec = new List<string>
 			{
-				Console.WriteLine();
-				var command = Console.ReadLine();
-				if (!String.IsNullOrWhiteSpace(command))
-				{
-					if (parser.Parse(command)) Console.WriteLine("\nOK");
-					else Console.WriteLine("\nWhat?");
-				}
-			}
+				"name node 1 as Controller",
+				"name node 18 as Wallmote 1",
+				"name node 23 as Wallmote 2",
+				"name node 13 as Study light switch",
+				"name node 10 as Study bulb",
+				"name node 14 as Porch bulb",
+				"name node 15 as Patio bulb",
+				"name node 16 as Patio bulb",
+				"name node 17 as Patio bulb",
+				"name node 24 as Patio bulb",
+				"name node 22 as Sensor 1",
+				"name node 25 as Sensor 2",
+				"name node 8 as Motion sensor 1",
+				"name node 11 as Motion sensor 2",
+				"name node 12 as Motion sensor 3",
+				"name node 2 as Plug 1"
+			};
+			//autoexec.ForEach(x => cli.Execute(x));
+
+			cli.RunCommandLoop();
+
 			zwave.Close();
 		}
 
-		static Area FindArea(string name, List<Area> areas)
+		[DllImport("kernel32.dll", CharSet = CharSet.Auto, SetLastError = true)]
+		static extern uint SetThreadExecutionState(uint esFlags);
+		static void KeepAlive()
 		{
-			if (areas == null) return null;
-			foreach (var area in areas)
-			{
-				if (String.Compare(area.Name, name, true) == 0) return area;
-				var found = FindArea(name, area.Children);
-				if (found != null) return found;
-			}
-			return null;
+			SetThreadExecutionState(0x00000001 | 0x80000000);
 		}
 
-		static void ListAreas(List<Area> areas, int depth=0)
+		static void wallMote1Changed(object sender, ReportEventArgs<CentralSceneReport> e)
 		{
-			if (areas == null) return;
+			Console.WriteLine($"{DateTimeOffset.Now:t} Wallmote 1 button {e.Report.SceneNumber} pressed");
 
-			foreach (var area in areas)
+			if (e.Report.SceneNumber == 1 || e.Report.SceneNumber == 3)
 			{
-				Console.WriteLine($"{new String(' ', depth)}{area.Name}");
-				ListAreas(area.Children, depth + 1);
+				studyLight.Set(e.Report.SceneNumber == 1);
+				studyBulb.Set((byte)(e.Report.SceneNumber == 1 ? 255 : 0));
+			}
+
+			if (e.Report.SceneNumber == 2 || e.Report.SceneNumber == 4)
+			{
+				patioBulbs.ForEach(bulb => bulb.Set((byte)(e.Report.SceneNumber == 2 ? 255 : 0)));
+			}
+		}
+
+		static void wallMote2Changed(object sender, ReportEventArgs<CentralSceneReport> e)
+		{
+			Console.WriteLine($"{DateTimeOffset.Now:t} Wallmote 2 button {e.Report.SceneNumber} pressed");
+
+			if (e.Report.SceneNumber == 1 || e.Report.SceneNumber == 3)
+			{
+				porchBulb.Set((byte)(e.Report.SceneNumber == 1 ? 255 : 0));
+			}
+
+			if (e.Report.SceneNumber == 2 || e.Report.SceneNumber == 4)
+			{
+				patioBulbs.ForEach(bulb => bulb.Set((byte)(e.Report.SceneNumber == 2 ? 255 : 0)));
 			}
 		}
 	}
@@ -215,5 +137,4 @@ namespace Experiment1
 		public Area Parent;
 		public List<Area> Children;
 	}
-
 }
