@@ -27,6 +27,9 @@ namespace Experiment1
 		public DateTimeOffset? FirstAdded;
 
 		public Report<BatteryReport> BatteryReport;
+		public Report<SensorMultiLevelReport> TemperatureReport;
+		public Report<SensorMultiLevelReport> LuminanceReport;
+		public Report<SensorMultiLevelReport> RelativeHumidityReport;
 
 		public void RecordFailure()
 		{

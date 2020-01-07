@@ -53,6 +53,11 @@ namespace Experiment1
 			Console.WriteLine("System ready");
 		}
 
+		public void Stop()
+		{
+			SaveState();
+		}
+
 		public List<(NodeState, Node)> FindNodes(Predicate<NodeState> predicate)
 		{
 			return nodeStates.Where(x => predicate(x.Value)).Select(x => (x.Value, nodes[x.Key])).ToList();
@@ -184,7 +189,11 @@ namespace Experiment1
 			basic.Changed += (_, e) => ReceiveReport(e.Report);
 
 			var sensorMultiLevel = node.GetCommandClass<SensorMultiLevel>();
-			sensorMultiLevel.Changed += (_, e) => ReceiveReport(e.Report);
+			sensorMultiLevel.Changed += (_, e) =>
+			{
+				ReceiveSensorMultiLevelReport(e.Report);
+				ReceiveReport(e.Report);
+			};
 
 			var meter = node.GetCommandClass<Meter>();
 			meter.Changed += (_, e) => ReceiveReport(e.Report);
@@ -254,7 +263,6 @@ namespace Experiment1
 
 		void ReceiveBatteryReport(ZWave.CommandClasses.BatteryReport report)
 		{
-			var state = nodeStates[report.Node.NodeID];
 			var r = new Report<BatteryReport>
 			{
 				Timestamp = DateTime.UtcNow,
@@ -264,7 +272,32 @@ namespace Experiment1
 					Value = report.Value
 				}
 			};
+
+			var state = nodeStates[report.Node.NodeID];
 			state.BatteryReport = r;
+		}
+
+		void ReceiveSensorMultiLevelReport(ZWave.CommandClasses.SensorMultiLevelReport report)
+		{
+			var r = new Report<SensorMultiLevelReport>
+			{
+				Timestamp = DateTime.UtcNow,
+				Data = new SensorMultiLevelReport
+				{
+					Type = report.Type,
+					Value = report.Value,
+					Unit = report.Unit,
+					Scale = report.Scale
+				}
+			};
+
+			var state = nodeStates[report.Node.NodeID];
+			switch (report.Type)
+			{
+				case SensorType.Temperature: state.TemperatureReport = r; break;
+				case SensorType.RelativeHumidity: state.RelativeHumidityReport = r; break;
+				case SensorType.Luminance: state.LuminanceReport = r; break;
+			}
 		}
 
 		void SaveState()

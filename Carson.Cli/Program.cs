@@ -77,6 +77,7 @@ namespace Experiment1
 
 			cli.RunCommandLoop();
 
+			network.Stop();
 			zwave.Close();
 		}
 

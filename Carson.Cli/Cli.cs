@@ -162,7 +162,32 @@ namespace Experiment1
 					{
 						context.Network.FindNodes(ns => ns.CommandClasses?.Contains(CommandClass.Battery) ?? false).ForEach(t =>
 						{
-							Console.WriteLine($"Node {t.Item2}: {t.Item1.Name.PadRight(20)} {(t.Item1.BatteryReport != null? t.Item1.BatteryReport.Data.ToString() : "Unknown").PadRight(15)} {t.Item1.BatteryReport.Timestamp.Ago()}");
+							Console.WriteLine($"Node {t.Item2}: {t.Item1.Name.PadRight(20)} {(t.Item1.BatteryReport != null? t.Item1.BatteryReport.Data.ToString() : "Unknown").PadRight(15)} {t.Item1.BatteryReport?.Timestamp.Ago() ?? ""}");
+						});
+					}
+				},
+				new Command
+				{
+					Pattern = "list sensors",
+					Action = p =>
+					{
+						context.Network.FindNodes(ns => ns.CommandClasses?.Contains(CommandClass.SensorMultiLevel) ?? false).ForEach(t =>
+						{
+							var reports = new List<Report<SensorMultiLevelReport>>{ t.Item1.TemperatureReport, t.Item1.RelativeHumidityReport, t.Item1.LuminanceReport};
+							reports.RemoveAll(x => x == null);
+
+							if (reports.Count == 0)
+							{
+								Console.WriteLine($"Node {t.Item2}: {t.Item1.Name.PadRight(20)} No reports");
+							}
+							else
+							{
+								Console.WriteLine($"Node {t.Item2}: {t.Item1.Name.PadRight(20)} {reports[0].Data.ToString().PadRight(40)} {reports[0].Timestamp.Ago()}");
+								for (int i = 1; i < reports.Count; i++)
+								{
+									Console.WriteLine($"{new String(' ', 30)} {reports[i].Data.ToString().PadRight(40)} {reports[i].Timestamp.Ago()}");
+								}
+							}
 						});
 					}
 				},
