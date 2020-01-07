@@ -45,11 +45,12 @@ namespace Experiment1
 			nodes = await z.GetNodes();
 			await ListNodes(nodes);
 			await QueryNodes(nodes);
+			await HealthCheck(nodes);
 
-			Console.WriteLine("System ready");
-
+			SaveState();
 			SubscribeAll(nodes);
 
+			Console.WriteLine("System ready");
 		}
 
 		public List<(NodeState, Node)> FindNodes(Predicate<NodeState> predicate)
@@ -90,14 +91,6 @@ namespace Experiment1
 			}
 
 			SaveState();
-		}
-
-		void SubscribeAll(NodeCollection nodes)
-		{
-			foreach (var n in nodes)
-			{
-				Subscribe(n);
-			}
 		}
 
 		async Task QueryNodes(NodeCollection nodes)
@@ -143,6 +136,46 @@ namespace Experiment1
 			}
 
 			SaveState();
+		}
+
+		async Task HealthCheck(NodeCollection nodes)
+		{
+			foreach (var n in nodes)
+			{
+				if (n.NodeID == 1) continue;
+
+				var tooLong = TimeSpan.FromDays(2);
+				var state = nodeStates[n.NodeID];
+
+				if (state.LastContact.HasValue && state.LastContact.IsOlderThan(tooLong)
+					|| !state.LastContact.HasValue && state.FirstAdded.IsOlderThan(tooLong))
+				{
+					var pinged = false;
+					if (!state.HasBattery && state.FailCount < 5)
+					{
+						try
+						{
+							await n.GetCommandClass<Configuration>().Get(1);
+							state.RecordContact();
+							pinged = true;
+						}
+						catch
+						{
+							state.RecordFailure();
+						}
+					}
+					if (!pinged) Console.WriteLine($"Warning: Last contact with node {n} was {state.LastContact.Ago()}. {state.FailCount} pings have failed, the last attempt was {state.LastFailed.Ago()}");
+				}
+			}
+			Console.WriteLine();
+		}
+
+		void SubscribeAll(NodeCollection nodes)
+		{
+			foreach (var n in nodes)
+			{
+				Subscribe(n);
+			}
 		}
 
 		private void Subscribe(Node node)

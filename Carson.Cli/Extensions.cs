@@ -30,7 +30,9 @@ namespace Experiment1
 
 			if (span.Minutes >= 1) return $"{minutePlural(span.Minutes)} ago";
 
-			return $"{secondPlural(span.Seconds)} ago";
+			if (span.Seconds >= 1) return $"{secondPlural(span.Seconds)} ago";
+
+			return "just now";
 		}
 
 		public static string Ago(this DateTimeOffset? timestamp)
