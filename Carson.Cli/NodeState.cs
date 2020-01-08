@@ -8,10 +8,13 @@ namespace Experiment1
 {
 	class NodeState
 	{
+		public byte NodeID;
 		public string Name;
 		public string Alias;
 
 		public bool Muted;
+		public bool Failed;		// Controller thinks node has failed
+		public bool Removed;	// No longer in the list reported by the controller
 
 		public DateTimeOffset? FirstFailed;
 		public DateTimeOffset? LastFailed;

@@ -30,15 +30,17 @@ namespace Experiment1
 				var command = Console.ReadLine();
 				if (!String.IsNullOrWhiteSpace(command))
 				{
-					if (Execute(command)) Console.WriteLine("\nOK");
+					if (Execute(command, false)) Console.WriteLine("\nOK");
 					else Console.WriteLine("\nWhat?");
 				}
 			}
 		}
 
-		public bool Execute(string command)
+		public bool Execute(string command, bool logCommandToConsole = true)
 		{
-			return parser.Parse(command);
+			var response = parser.Parse(command);
+			if (logCommandToConsole) Console.WriteLine($"{DateTimeOffset.UtcNow:t} Command \"{command}\" executed");
+			return response;
 		}
 
 		List<Command> LoadGrammar()
@@ -144,9 +146,14 @@ namespace Experiment1
 				new Command
 				{
 					Pattern = "list nodes",
-					Action = p => context.Network.FindNodes(ns => !String.IsNullOrEmpty(ns.Name)).ForEach( t =>
+					Action = p => context.Network.FindNodes(ns => true).OrderBy(t => t.Item1.Name).ToList().ForEach( t =>
 					{
-						Console.WriteLine($"Node {t.Item2}: {t.Item1.Name.PadRight(20)} {t.Item1.LastContact.Ago().PadRight(25)} {(t.Item1.Muted? "(Muted)" : "")}");
+						Console.Write($"Node {t.Item1.NodeID:D3}: {(t.Item1.Name ?? "").PadRight(20)} ");
+						Console.Write($"{t.Item1.LastContact.Ago().PadRight(25)} ");
+						Console.Write($"{(t.Item1.Muted? "(Muted)" : "").PadRight(7)} ");
+						Console.Write($"{(t.Item1.Failed? "(Failed)" : "").PadRight(8)} ");
+						Console.Write($"{(t.Item1.Removed? "(Removed)" : "").PadRight(9)} ");
+						Console.WriteLine();
 					})
 				},
 				new Command
@@ -208,6 +215,28 @@ namespace Experiment1
 						var t = context.Network.GetNode(Byte.Parse(p["node"]));
 						if (t.Item1 == null) Console.WriteLine($"Node {p["node"]} does not exist");
 						else t.Item1.Muted = false;
+					}
+				},
+				new Command
+				{
+					Pattern = "forget node {node}",
+					Action = p =>
+					{
+						var id = Byte.Parse(p["node"]);
+						var t = context.Network.GetNode(id);
+						if (t.Item1 == null) Console.WriteLine($"Node {p["node"]} does not exist");
+						else context.Network.nodeStates.Remove(id);
+					}
+				},
+				new Command
+				{
+					Pattern = "list orders",
+					Action = p =>
+					{
+						foreach (var order in context.Orders.OrderBy(x => x.ScheduledFor.Value))
+						{
+							Console.WriteLine($"{order.Command.PadRight(30)} {order.ScheduledFor.Value.In()}");
+						}
 					}
 				},
 				new Command

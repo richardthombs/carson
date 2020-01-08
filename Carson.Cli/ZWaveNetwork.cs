@@ -49,8 +49,6 @@ namespace Experiment1
 
 			SaveState();
 			SubscribeAll(nodes);
-
-			Console.WriteLine("System ready");
 		}
 
 		public void Stop()
@@ -60,14 +58,17 @@ namespace Experiment1
 
 		public List<(NodeState, Node)> FindNodes(Predicate<NodeState> predicate)
 		{
-			return nodeStates.Where(x => predicate(x.Value)).Select(x => (x.Value, nodes[x.Key])).ToList();
+			var filtered = nodeStates.Where(x => predicate(x.Value));
+			var selected = filtered.Select(x => (x.Value, nodes[x.Key]));
+			var list = selected.ToList();
+			return list;
 		}
 
 		public (NodeState, Node) GetNode(byte nodeID)
 		{
-			if (!nodeStates.ContainsKey(nodeID)) return (null,null);
-			if (nodes[nodeID] == null) return (null, null);
-			return (nodeStates[nodeID], nodes[nodeID]);
+			var state = nodeStates.ContainsKey(nodeID)? nodeStates[nodeID] : null;
+			var node = nodes[nodeID];
+			return (state, node);
 		}
 
 		async Task ListNodes(NodeCollection nodes)
@@ -91,8 +92,11 @@ namespace Experiment1
 				var state = nodeStates[n.NodeID];
 
 				if (state.FirstAdded == null) state.FirstAdded = DateTimeOffset.UtcNow;
+				state.NodeID = n.NodeID;
 				state.HasBattery = !protocolInfo.IsListening;
 				state.GenericType = protocolInfo.GenericType;
+				state.Removed = false;
+				state.Failed = await n.IsNodeFailed();
 			}
 
 			SaveState();
@@ -100,6 +104,7 @@ namespace Experiment1
 
 		async Task QueryNodes(NodeCollection nodes)
 		{
+			bool messages = false;
 			foreach (var n in nodes)
 			{
 				var state = nodeStates[n.NodeID];
@@ -108,18 +113,20 @@ namespace Experiment1
 				if (state.HasBattery)
 				{
 					Console.WriteLine($"Won't query node {n} until it wakes up");
+					messages = true;
 					continue;
 				}
 				if (state.FailCount >= 5 && !state.LastFailed.IsOlderThan(TimeSpan.FromDays(1)))
 				{
 					Console.WriteLine($"Won't query node {n} because it has failed {state.FailCount} times, most recently {state.LastFailed.Ago()}");
+					messages = true;
 					continue;
 				}
 
 				await QueryNode(n);
 			}
 
-			Console.WriteLine();
+			if (messages) Console.WriteLine();
 		}
 
 		async Task QueryNode(Node n)
@@ -145,6 +152,7 @@ namespace Experiment1
 
 		async Task HealthCheck(NodeCollection nodes)
 		{
+			bool messages = false;
 			foreach (var n in nodes)
 			{
 				if (n.NodeID == 1) continue;
@@ -169,10 +177,25 @@ namespace Experiment1
 							state.RecordFailure();
 						}
 					}
-					if (!pinged) Console.WriteLine($"Warning: Last contact with node {n} was {state.LastContact.Ago()}. {state.FailCount} pings have failed, the last attempt was {state.LastFailed.Ago()}");
+					if (!pinged)
+					{
+						Console.WriteLine($"Warning: Last contact with node {n} was {state.LastContact.Ago()}. {state.FailCount} pings have failed, the last attempt was {state.LastFailed.Ago()}");
+						messages = true;
+					}
 				}
 			}
-			Console.WriteLine();
+
+			foreach (var state in nodeStates)
+			{
+				if (nodes[state.Key] == null)
+				{
+					Console.WriteLine($"Warning: Node {state.Key:D3} ({state.Value.Name ?? "no name"}) has been removed from the network");
+					state.Value.Removed = true;
+					messages = true;
+				}
+			}
+
+			if (messages) Console.WriteLine();
 		}
 
 		void SubscribeAll(NodeCollection nodes)

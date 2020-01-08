@@ -16,6 +16,33 @@ namespace Experiment1
 			return timestamp.Value.IsOlderThan(value);
 		}
 
+		public static string In(this TimeSpan span)
+		{
+			if (span.Days >= 7) return $"in {dayPlural(span.Days)}";
+
+			if (span.Days >= 1) return $"in {dayPlural(span.Days)}, {hourPlural(span.Hours)}";
+
+			if (span.Hours >= 1) return $"in {hourPlural(span.Hours)}, {minutePlural(span.Minutes)}";
+
+			if (span.Minutes >= 1) return $"in {minutePlural(span.Minutes)}";
+
+			if (span.Seconds >= 1) return $"in {secondPlural(span.Seconds)}";
+
+			return "right now";
+		}
+
+		public static string In(this DateTimeOffset when)
+		{
+			var now = DateTimeOffset.UtcNow;
+			var span = when - now;
+
+			if (now.AddDays(1).Date == when.Date) return $"tomorrow at {when:t}";
+			if (span.Days >= 7) return $"{when:d} at {when:t}";
+			if (span.Days >= 1) return $"this {when:dddd} at {when:t}";
+
+			return In(span);
+		}
+
 		public static string Ago(this DateTimeOffset timestamp)
 		{
 			var span = DateTimeOffset.Now - timestamp;
