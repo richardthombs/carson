@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.RegularExpressions;
 
 using ZWave;
 using ZWave.Channel;
@@ -233,7 +234,7 @@ namespace Experiment1
 					Pattern = "list orders",
 					Action = p =>
 					{
-						foreach (var order in context.Orders.OrderBy(x => x.ScheduledFor.Value))
+						foreach (var order in context.Orders.OrderBy(x => x.ScheduledFor))
 						{
 							Console.WriteLine($"{order.Command.PadRight(30)} {order.ScheduledFor.Value.In()}");
 						}
@@ -248,6 +249,49 @@ namespace Experiment1
 				{
 					Pattern = "help",
 					Action = p => grammar.ForEach(x => Console.WriteLine(x.Pattern))
+				},
+				new Command
+				{
+					Pattern = "wait for {event} then {command}",
+					Action = p =>
+					{
+						var e = p["event"];
+						var delayRegex = new Regex(@"(\d+) (hour|minute|second|hour)[s]");
+						var delayMatch = delayRegex.Match(e);
+						if (delayMatch.Success)
+						{
+							TimeSpan delay = TimeSpan.Zero;
+							switch (delayMatch.Groups[2].Value)
+							{
+								case "second": delay = TimeSpan.FromSeconds(Int32.Parse(delayMatch.Groups[1].Value)); break;
+								case "minute": delay = TimeSpan.FromMinutes(Int32.Parse(delayMatch.Groups[1].Value)); break;
+								case "hour": delay = TimeSpan.FromHours(Int32.Parse(delayMatch.Groups[1].Value)); break;
+							}
+
+							context.Orders.Add(new StandingOrder
+							{
+								WaitFor = delay,
+								Command = p["command"]
+							});
+						}
+						else
+						{
+							DateTimeOffset? when = DateTimeOffset.TryParse(e, out DateTimeOffset whenOut) ? (DateTimeOffset?)whenOut : null;
+							if (when.HasValue)
+							{
+								context.Orders.Add(new StandingOrder
+								{
+									RunAt = DateTimeOffset.UtcNow.Date.Add(when.Value.TimeOfDay),
+									Command = p["command"]
+								});
+							}
+						}
+					}
+				},
+				new Command
+				{
+					Pattern = "delete orders",
+					Action = p => context.Orders.RemoveAll(x => true)
 				}
 			};
 		}

@@ -59,56 +59,12 @@ namespace Experiment1
 			wallmote1.Changed += wallMote1Changed;
 			wallmote2.Changed += wallMote2Changed;
 
-			var orders = new List<StandingOrder>
-			{
-				new StandingOrder { RunAt = DateTimeOffset.UtcNow.Date.AddHours(16), Command="turn porch light on"},
-				new StandingOrder { RunAt = DateTimeOffset.UtcNow.Date.AddHours(22), Command="turn porch light off"},
-				new StandingOrder { RunAt = DateTimeOffset.UtcNow.Date.AddHours(5), Command="turn porch light on"},
-				new StandingOrder { RunAt = DateTimeOffset.UtcNow.Date.AddHours(8), Command="turn porch light off"},
-				new StandingOrder { RunAt = DateTimeOffset.UtcNow.Date.AddHours(18), Command="turn patio lights on"},
-				new StandingOrder { RunAt = DateTimeOffset.UtcNow.Date.AddHours(21), Command="turn patio lights off"}
-			};
-			context.Orders = orders;
+			// when node 18 button 1 then turn study lights on
+			// wait for node 8 alarm then turn porch lights on then wait for 15 minutes then turn porch lights off
+			// wait for 4pm then then turn porch lights on
+			// wait for 15 minutes then turn porch lights off
 
 
-			foreach (var order in context.Orders)
-			{
-				var now = DateTimeOffset.UtcNow;
-				if (order.RunAt.HasValue)
-				{
-					if (order.RunAt.Value < now) order.RunAt = DateTimeOffset.UtcNow.Date.Add(order.RunAt.Value.TimeOfDay).AddDays(1);
-					order.ScheduledFor = order.RunAt;
-				}
-				else if (order.WaitFor.HasValue)
-				{
-					order.ScheduledFor = now.Add(order.WaitFor.Value);
-				}
-			}
-
-			foreach (var order in context.Orders.OrderBy(x => x.ScheduledFor.Value))
-			{
-				Task.Run(async () =>
-				{
-					while (true)
-					{
-						await ExecuteAt(order.Command, order.ScheduledFor.Value);
-						Console.WriteLine($"{DateTimeOffset.Now:t} \"{order.Command}\" executed");
-
-						var now = DateTimeOffset.UtcNow;
-						if (order.RunAt.HasValue)
-						{
-							if (order.RunAt.Value < now) order.RunAt = DateTimeOffset.UtcNow.Date.Add(order.RunAt.Value.TimeOfDay).AddDays(1);
-							order.ScheduledFor = order.RunAt;
-						}
-						else if (order.WaitFor.HasValue)
-						{
-							order.ScheduledFor = now.Add(order.WaitFor.Value);
-						}
-
-						SaveState();
-					}
-				});
-			}
 
 			cli = new Cli(context);
 
@@ -132,9 +88,19 @@ namespace Experiment1
 				"name node 12 as Motion sensor 3",
 				"name node 2 as Plug 1"
 */
-				"list orders"
+				"delete orders",
+				"wait for 4pm then turn porch light on",
+				"wait for 10pm then turn porch light off",
+				"wait for 5am then turn porch light on",
+				"wait for 8am then turn porch light off",
+				"wait for 6pm then turn patio lights on",
+				"wait for 10pm then turn patio lights off"
 			};
 			autoexec.ForEach(x => cli.Execute(x, false));
+
+			ScheduleOrders();
+
+			cli.Execute("list orders", false);
 
 			Console.WriteLine("\nSystem ready");
 
@@ -203,6 +169,48 @@ namespace Experiment1
 					ExecuteAfter("turn patio lights off", TimeSpan.FromHours(4));
 					break;
 				case 4: cli.Execute("turn patio lights off"); break;
+			}
+		}
+
+		static void ScheduleOrders()
+		{
+			foreach (var order in context.Orders)
+			{
+				var now = DateTimeOffset.UtcNow;
+				if (order.RunAt.HasValue)
+				{
+					if (order.RunAt.Value < now) order.RunAt = DateTimeOffset.UtcNow.Date.Add(order.RunAt.Value.TimeOfDay).AddDays(1);
+					order.ScheduledFor = order.RunAt;
+				}
+				else if (order.WaitFor.HasValue)
+				{
+					order.ScheduledFor = now.Add(order.WaitFor.Value);
+				}
+			}
+
+			foreach (var order in context.Orders.OrderBy(x => x.ScheduledFor.Value))
+			{
+				Task.Run(async () =>
+				{
+					while (true)
+					{
+						await ExecuteAt(order.Command, order.ScheduledFor.Value);
+						Console.WriteLine($"{DateTimeOffset.Now:t} \"{order.Command}\" executed");
+
+						var now = DateTimeOffset.UtcNow;
+						if (order.RunAt.HasValue)
+						{
+							if (order.RunAt.Value < now) order.RunAt = DateTimeOffset.UtcNow.Date.Add(order.RunAt.Value.TimeOfDay).AddDays(1);
+							order.ScheduledFor = order.RunAt;
+						}
+						else if (order.WaitFor.HasValue)
+						{
+							order.ScheduledFor = now.Add(order.WaitFor.Value);
+						}
+
+						SaveState();
+					}
+				});
 			}
 		}
 
