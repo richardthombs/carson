@@ -405,7 +405,12 @@ namespace Experiment1
 
 		List<(NodeState, Node)> FindNodesByName(string name)
 		{
-			return context.Network.FindNodes(ns => String.Compare(ns.Name, name, true) == 0 || String.Compare(ns.Alias, name, true) == 0);
+			return context.Network.FindNodes(NodeNameMatch(name));
+		}
+
+		Predicate<NodeState> NodeNameMatch(string name)
+		{
+			return (ns) => String.Compare(ns.Name, name, true) == 0 || String.Compare(ns.Alias, name, true) == 0;
 		}
 
 		Area FindArea(string name, List<Area> areas)

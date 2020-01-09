@@ -2,9 +2,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using System.IO;
-
-using Newtonsoft.Json;
 
 using ZWave;
 using ZWave.CommandClasses;
@@ -14,27 +11,23 @@ namespace Experiment1
 {
 	class ZWaveNetwork
 	{
-		ZWaveController z;
 		public Dictionary<byte, NodeState> nodeStates;
 		public NodeCollection nodes;
+		public Action OnStateChange;
+		ZWaveController z;
 
-		public ZWaveNetwork(ZWaveController zwave)
+		public ZWaveNetwork(ZWaveController zwave, Dictionary<byte, NodeState> nodeStates)
 		{
-			this.nodeStates = new Dictionary<byte, NodeState>();
+			this.nodeStates = nodeStates;
 			this.z = zwave;
 		}
 
 		public async Task Start()
 		{
-			try
+			if (nodeStates.Count == 0)
 			{
-				LoadState();
-			}
-			catch
-			{
-				Console.WriteLine("Could not load state, resetting...");
+				Console.WriteLine("Looks like we are initialising for the first time, this might take a while...");
 				Console.WriteLine();
-				nodeStates = new Dictionary<byte, NodeState>();
 			}
 
 			var homeId = await z.GetHomeID();
@@ -161,30 +154,42 @@ namespace Experiment1
 				var tooLong = TimeSpan.FromDays(2);
 				var state = nodeStates[n.NodeID];
 
-				if (state.LastContact.HasValue && state.LastContact.IsOlderThan(tooLong)
-					|| !state.LastContact.HasValue && state.FirstAdded.IsOlderThan(tooLong))
+				if (state.LastContact.HasValue && state.LastContact.IsOlderThan(tooLong) || !state.LastContact.HasValue && state.FirstAdded.IsOlderThan(tooLong))
 				{
-					var pinged = false;
-					if (!state.HasBattery && state.FailCount < 5)
+					if (state.FailCount < 5)
 					{
+						messages = true;
+						Console.Write($"Node {n} has not been heard from recently, trying to ping it...");
 						try
 						{
-							await n.GetCommandClass<Configuration>().Get(1);
+							await n.GetSupportedCommandClasses();
 							state.RecordContact();
-							pinged = true;
+							Console.WriteLine("Success");
 						}
 						catch
 						{
+							Console.WriteLine("Failed");
 							state.RecordFailure();
 						}
 					}
-					if (!pinged)
-					{
-						Console.WriteLine($"Warning: Last contact with node {n} was {state.LastContact.Ago()}. {state.FailCount} pings have failed, the last attempt was {state.LastFailed.Ago()}");
-						messages = true;
-					}
 				}
 			}
+
+			if (messages) Console.WriteLine();
+			messages = false;
+
+			foreach (var n in nodes)
+			{
+				var state = nodeStates[n.NodeID];
+				if (state.FailCount > 0)
+				{
+					Console.WriteLine($"Warning: Last contact with node {n} was {state.LastContact.Ago()}. {state.FailCount} pings have failed, the last attempt was {state.LastFailed.Ago()}");
+					messages = true;
+				}
+			}
+
+			if (messages) Console.WriteLine();
+			messages = false;
 
 			foreach (var state in nodeStates)
 			{
@@ -351,20 +356,7 @@ namespace Experiment1
 
 		void SaveState()
 		{
-			lock (nodeStates)
-			{
-				var json = JsonConvert.SerializeObject(nodeStates);
-				File.WriteAllText("state.json", json);
-			}
-		}
-
-		void LoadState()
-		{
-			lock (nodeStates)
-			{
-				var json = File.ReadAllText("state.json");
-				this.nodeStates = JsonConvert.DeserializeObject<Dictionary<byte, NodeState>>(json);
-			}
+			OnStateChange?.Invoke();
 		}
 	}
 }

@@ -17,8 +17,6 @@ namespace Experiment1
 	{
 		static CentralScene wallmote1;
 		static CentralScene wallmote2;
-
-		static Context context;
 		static Cli cli;
 
 		static void Main()
@@ -32,36 +30,102 @@ namespace Experiment1
 				Converters = { new StringEnumConverter() }
 			};
 
-			var zwave = new ZWaveController("COM3");
-			//zwave.Channel.Log = new System.IO.StreamWriter(Console.OpenStandardOutput());
-			zwave.Channel.MaxRetryCount = 1;
-			zwave.Channel.ResponseTimeout = TimeSpan.FromSeconds(10);
-			zwave.Channel.ReceiveTimeout = TimeSpan.FromSeconds(10);
-			zwave.Open();
-
-			var network = new ZWaveNetwork(zwave);
+			// Start the network
+			var controller = CreateController("COM3");
+			var nodeStates = LoadStates();
+			var network = new ZWaveNetwork(controller, nodeStates)
+			{
+				OnStateChange = () => SaveStates(nodeStates)
+			};
 			Task.Run(() => network.Start()).Wait();
 
-			context = new Context
+			// Build a context for commands to run in
+			var context = new Context
 			{
 				Network = network,
-				Quit = false,
 				Areas = new List<Area>(),
 				Tasks = new List<BackgroundTask>()
 			};
 
+			// Create the command line interface
+			cli = new Cli(context);
+
+			// Load any background tasks and launch them again
+			var tasks = LoadTasks();
+			tasks.ForEach(x => cli.Execute(x, nak: true));
+
+			// Run any startup commands
+			var autoexec = LoadAutoexec();
+			autoexec.ForEach(x => cli.Execute(x, nak: true));
+
+			// TODO: Hack in Wallmote button handlers until I write some built-in support
 			wallmote1 = network.nodes[18].GetCommandClass<CentralScene>();
 			wallmote2 = network.nodes[23].GetCommandClass<CentralScene>();
-
 			wallmote1.Changed += wallMote1Changed;
 			wallmote2.Changed += wallMote2Changed;
 
-			cli = new Cli(context);
+			Console.WriteLine("\nSystem ready");
 
-			var tasks = LoadTasks();
-			tasks?.ForEach(x => cli.Execute(x, nak: true));
+			cli.RunCommandLoop();
 
-			var autoexec = new List<string>
+			network.Stop();
+			controller.Close();
+
+			SaveStates(nodeStates);
+			SaveTasks(context.Tasks);
+		}
+
+		private static ZWaveController CreateController(string portName)
+		{
+			var zwaveController = new ZWaveController(portName);
+			//zwave.Channel.Log = new System.IO.StreamWriter(Console.OpenStandardOutput());
+			zwaveController.Channel.MaxRetryCount = 1;
+			zwaveController.Channel.ResponseTimeout = TimeSpan.FromSeconds(10);
+			zwaveController.Channel.ReceiveTimeout = TimeSpan.FromSeconds(10);
+			zwaveController.Open();
+			return zwaveController;
+		}
+
+		static Dictionary<byte, NodeState> LoadStates()
+		{
+			try
+			{
+				var json = File.ReadAllText("state.json");
+				return JsonConvert.DeserializeObject<Dictionary<byte, NodeState>>(json);
+			}
+			catch { }
+
+			return new Dictionary<byte, NodeState>();
+		}
+
+		static void SaveStates(Dictionary<byte, NodeState> nodeStates)
+		{
+			var json = JsonConvert.SerializeObject(nodeStates);
+			File.WriteAllText("state.json", json);
+		}
+
+		static List<string> LoadTasks()
+		{
+			try
+			{
+				var json = File.ReadAllText("tasks.json");
+				return JsonConvert.DeserializeObject<List<string>>(json);
+			}
+			catch { }
+
+			return new List<string>();
+		}
+
+		static void SaveTasks(List<BackgroundTask> tasks)
+		{
+			var runningTasks = tasks.Where(x => !x.Completed && !x.Cancelled && x.Command.EndsWith("then repeat")).Select(x => x.Command).ToList();
+			var json = JsonConvert.SerializeObject(runningTasks);
+			File.WriteAllText("tasks.json", json);
+		}
+
+		static List<string> LoadAutoexec()
+		{
+			return new List<string>
 			{
 /*
 				"name node 1 as Controller",
@@ -92,38 +156,6 @@ namespace Experiment1
 */
 				"list tasks"
 			};
-			autoexec.ForEach(x => cli.Execute(x, nak: true));
-
-			Console.WriteLine("\nSystem ready");
-
-			cli.RunCommandLoop();
-
-			network.Stop();
-			zwave.Close();
-
-			SaveTasks();
-		}
-
-		static List<string> LoadTasks()
-		{
-			try
-			{
-				var json = File.ReadAllText("tasks.json");
-				return JsonConvert.DeserializeObject<List<string>>(json);
-			}
-			catch { }
-
-			return null;
-		}
-
-		static void SaveTasks()
-		{
-			lock (context)
-			{
-				var tasks = context.Tasks.Where(x => !x.Completed && !x.Cancelled && x.Command.EndsWith("then repeat")).Select(x => x.Command).ToList();
-				var json = JsonConvert.SerializeObject(tasks);
-				File.WriteAllText("tasks.json", json);
-			}
 		}
 
 		[DllImport("kernel32.dll", CharSet = CharSet.Auto, SetLastError = true)]
