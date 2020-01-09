@@ -40,7 +40,7 @@ namespace Experiment1
 			var homeId = await z.GetHomeID();
 			var nodeId = await z.GetNodeID();
 
-			Console.WriteLine($"Home ID: {homeId}, Controller ID: {nodeId}");
+			Console.WriteLine($"Home ID: {homeId:x8}, Controller ID: {nodeId:D3}");
 			Console.WriteLine();
 
 			nodes = await z.GetNodes();

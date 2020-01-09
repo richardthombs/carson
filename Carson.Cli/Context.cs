@@ -7,6 +7,6 @@ namespace Experiment1
 		public ZWaveNetwork Network;
 		public bool Quit;
 		public List<Area> Areas;
-		public List<StandingOrder> Orders;
+		public List<BackgroundTask> Tasks;
 	}
 }

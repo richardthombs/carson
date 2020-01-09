@@ -123,6 +123,7 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="BackgroundTask.cs" />
     <Compile Include="Cli.cs" />
     <Compile Include="CommandParser.cs" />
     <Compile Include="Context.cs" />

@@ -2,6 +2,8 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
+using System.Threading;
+using System.Threading.Tasks;
 
 using ZWave;
 using ZWave.Channel;
@@ -12,9 +14,9 @@ namespace Experiment1
 	class Cli
 	{
 		Context context;
-		bool quit;
 		List<Command> grammar;
 		CommandParser parser;
+		bool quit;
 
 		public Cli(Context context)
 		{
@@ -23,25 +25,89 @@ namespace Experiment1
 			this.parser = new CommandParser(grammar);
 		}
 
+		public void Execute(string command, bool nak=false)
+		{
+			var fragments = command.Split(new string[] { " then " }, StringSplitOptions.RemoveEmptyEntries);
+
+			if (fragments.Any(x => IsWaitFor(x)))
+			{
+				var taskID = context.Tasks.Count + 1;
+				var source = new CancellationTokenSource();
+				var token = source.Token;
+				var task = new BackgroundTask
+				{
+					TaskID = taskID,
+					Command = command,
+					CanncelationSource = source,
+					CancellationToken = token
+				};
+				context.Tasks.Add(task);
+
+				Task.Run(() =>
+				{
+					for (int f = 0; f < fragments.Length; f++)
+					{
+						if (!token.IsCancellationRequested)
+						{
+							var fragment = fragments[f];
+							if (fragment == "repeat")
+							{
+								f = 0;
+								fragment = fragments[f];
+							}
+
+							var ok = ExecuteFragment(fragment, task);
+							if (ok && !IsWaitFor(fragment)) Console.WriteLine($"Task {task.TaskID} executed \"{fragment}\"");
+							if (!ok) Console.WriteLine($"Task {task.TaskID} contains a command I don't understand: \"{fragment}\"");
+						}
+					}
+					task.Cancelled = token.IsCancellationRequested;
+					task.Completed = !token.IsCancellationRequested;
+					if (!token.IsCancellationRequested) Console.WriteLine($"Task {taskID} has completed");
+
+				}, token);
+
+				if (!nak) Console.WriteLine($"Task {taskID} started");
+			}
+			else
+			{
+				var oks = new List<bool>();
+				foreach (var fragment in fragments)
+				{
+					var ok = ExecuteFragment(fragment);
+					if (!ok) Console.WriteLine($"Sorry, I don't understand \"{fragment}\"");
+					oks.Add(ok);
+				}
+				if (!nak && oks.All(x => x)) Console.WriteLine("OK");
+			}
+		}
+
 		public void RunCommandLoop()
 		{
 			while (!quit)
 			{
 				Console.WriteLine();
+				Console.Write("> ");
 				var command = Console.ReadLine();
 				if (!String.IsNullOrWhiteSpace(command))
 				{
-					if (Execute(command, false)) Console.WriteLine("\nOK");
-					else Console.WriteLine("\nWhat?");
+					Execute(command);
 				}
 			}
 		}
 
-		public bool Execute(string command, bool logCommandToConsole = true)
+		bool IsWaitFor(string command)
 		{
-			var response = parser.Parse(command);
-			if (logCommandToConsole) Console.WriteLine($"{DateTimeOffset.UtcNow:t} Command \"{command}\" executed");
-			return response;
+			return command.StartsWith("wait for");
+		}
+
+
+		bool ExecuteFragment(string command, BackgroundTask task = null)
+		{
+			var action = parser.Parse(command, task);
+			if (action == null) return false;
+			action();
+			return true;
 		}
 
 		List<Command> LoadGrammar()
@@ -51,7 +117,7 @@ namespace Experiment1
 				new Command
 				{
 					Pattern = "turn {something} on",
-					Action = p =>
+					Action = (p, _) =>
 					{
 						var nodes = FindNodesByName(p["something"]);
 						if (nodes.Count == 0) Console.WriteLine($"Can't find any nodes called \"{p["something"]}\"");
@@ -70,7 +136,7 @@ namespace Experiment1
 				new Command
 				{
 					Pattern = "turn {something} off",
-					Action = p =>
+					Action = (p, _) =>
 					{
 						var nodes = FindNodesByName(p["something"]);
 						if (nodes.Count == 0) Console.WriteLine($"Can't find any nodes called \"{p["something"]}\"");
@@ -89,7 +155,7 @@ namespace Experiment1
 				new Command
 				{
 					Pattern = "create area {area}",
-					Action = p =>
+					Action = (p, _) =>
 					{
 						if (context.Areas.Exists(a => String.Compare(a.Name,p["area"],true) == 0))
 						{
@@ -107,7 +173,7 @@ namespace Experiment1
 				new Command
 				{
 					Pattern = "add area {area1} to {area2}",
-					Action = p =>
+					Action = (p, _) =>
 					{
 						var area1 = FindArea(p["area1"], context.Areas);
 						var area2 = FindArea(p["area2"], context.Areas);
@@ -126,7 +192,7 @@ namespace Experiment1
 				new Command
 				{
 					Pattern = "name node {node} as {name}",
-					Action = p =>
+					Action = (p, _) =>
 					{
 
 						var t = context.Network.GetNode(Byte.Parse(p["node"]));
@@ -137,7 +203,7 @@ namespace Experiment1
 				new Command
 				{
 					Pattern = "alias node {node} as {alias}",
-					Action = p =>
+					Action = (p, _) =>
 					{
 						var t = context.Network.GetNode(Byte.Parse(p["node"]));
 						if (t.Item1 == null) Console.WriteLine($"Node {p["node"]} does not exist");
@@ -147,7 +213,7 @@ namespace Experiment1
 				new Command
 				{
 					Pattern = "list nodes",
-					Action = p => context.Network.FindNodes(ns => true).OrderBy(t => t.Item1.Name).ToList().ForEach( t =>
+					Action = (p, _) => context.Network.FindNodes(ns => true).OrderBy(t => t.Item1.Name).ToList().ForEach( t =>
 					{
 						Console.Write($"Node {t.Item1.NodeID:D3}: {(t.Item1.Name ?? "").PadRight(20)} ");
 						Console.Write($"{t.Item1.LastContact.Ago().PadRight(25)} ");
@@ -160,7 +226,7 @@ namespace Experiment1
 				new Command
 				{
 					Pattern = "list batteries",
-					Action = p =>
+					Action = (p, _) =>
 					{
 						context.Network.FindNodes(ns => ns.CommandClasses?.Contains(CommandClass.Battery) ?? false).ForEach(t =>
 						{
@@ -171,7 +237,7 @@ namespace Experiment1
 				new Command
 				{
 					Pattern = "list sensors",
-					Action = p =>
+					Action = (p, _) =>
 					{
 						context.Network.FindNodes(ns => ns.CommandClasses?.Contains(CommandClass.SensorMultiLevel) ?? false).ForEach(t =>
 						{
@@ -196,7 +262,7 @@ namespace Experiment1
 				new Command
 				{
 					Pattern = "list alarms",
-					Action = p =>
+					Action = (p, _) =>
 					{
 						context.Network.FindNodes(ns => ns.CommandClasses?.Contains(CommandClass.Alarm) ?? false).ForEach(t =>
 						{
@@ -207,12 +273,12 @@ namespace Experiment1
 				new Command
 				{
 					Pattern = "list areas",
-					Action = p=> ListAreas(context.Areas)
+					Action = (p, _) => ListAreas(context.Areas)
 				},
 				new Command
 				{
 					Pattern = "mute node {node}",
-					Action = p =>
+					Action = (p, _) =>
 					{
 						var t = context.Network.GetNode(Byte.Parse(p["node"]));
 						if (t.Item1 == null) Console.WriteLine($"Node {p["node"]} does not exist");
@@ -222,7 +288,7 @@ namespace Experiment1
 				new Command
 				{
 					Pattern = "unmute node {node}",
-					Action = p =>
+					Action = (p, _) =>
 					{
 						var t = context.Network.GetNode(Byte.Parse(p["node"]));
 						if (t.Item1 == null) Console.WriteLine($"Node {p["node"]} does not exist");
@@ -232,7 +298,7 @@ namespace Experiment1
 				new Command
 				{
 					Pattern = "forget node {node}",
-					Action = p =>
+					Action = (p, _) =>
 					{
 						var id = Byte.Parse(p["node"]);
 						var t = context.Network.GetNode(id);
@@ -242,69 +308,99 @@ namespace Experiment1
 				},
 				new Command
 				{
-					Pattern = "list orders",
-					Action = p =>
-					{
-						foreach (var order in context.Orders.OrderBy(x => x.ScheduledFor))
-						{
-							Console.WriteLine($"{order.Command.PadRight(30)} {order.ScheduledFor.Value.In()}");
-						}
-					}
-				},
-				new Command
-				{
 					Pattern = "quit",
-					Action = p => quit = true
+					Action = (p, _) => quit = true
 				},
 				new Command
 				{
 					Pattern = "help",
-					Action = p => grammar.ForEach(x => Console.WriteLine(x.Pattern))
+					Action = (p, _) => grammar.ForEach(x => Console.WriteLine(x.Pattern))
 				},
 				new Command
 				{
-					Pattern = "wait for {event} then {command}",
-					Action = p =>
+					Pattern = "wait for {event}",
+					Action = (p, task) =>
 					{
-						var e = p["event"];
-						var delayRegex = new Regex(@"(\d+) (hour|minute|second|hour)[s]");
-						var delayMatch = delayRegex.Match(e);
-						if (delayMatch.Success)
+						var when = ParseWaitFor(p["event"]);
+						if (when.HasValue)
 						{
-							TimeSpan delay = TimeSpan.Zero;
-							switch (delayMatch.Groups[2].Value)
-							{
-								case "second": delay = TimeSpan.FromSeconds(Int32.Parse(delayMatch.Groups[1].Value)); break;
-								case "minute": delay = TimeSpan.FromMinutes(Int32.Parse(delayMatch.Groups[1].Value)); break;
-								case "hour": delay = TimeSpan.FromHours(Int32.Parse(delayMatch.Groups[1].Value)); break;
-							}
-
-							context.Orders.Add(new StandingOrder
-							{
-								WaitFor = delay,
-								Command = p["command"]
-							});
-						}
-						else
-						{
-							DateTimeOffset? when = DateTimeOffset.TryParse(e, out DateTimeOffset whenOut) ? (DateTimeOffset?)whenOut : null;
-							if (when.HasValue)
-							{
-								context.Orders.Add(new StandingOrder
-								{
-									RunAt = DateTimeOffset.UtcNow.Date.Add(when.Value.TimeOfDay),
-									Command = p["command"]
-								});
-							}
+							task.SleepUntil = when.Value;
+							task.CancellationToken.WaitHandle.WaitOne(when.Value - DateTimeOffset.UtcNow);
+							task.SleepUntil = null;
 						}
 					}
 				},
 				new Command
 				{
-					Pattern = "delete orders",
-					Action = p => context.Orders.RemoveAll(x => true)
+					Pattern = "list tasks",
+					Action = (p, _) =>
+					{
+						if (context.Tasks.Count > 0)
+						{
+							var longest = context.Tasks.Max( x=> x.Command.Length);
+
+							context.Tasks.ForEach(t =>
+							{
+								var state = "Running";
+								if (t.Completed) state="Completed";
+								if (t.Cancelled) state="Cancelled";
+								if (t.SleepUntil.HasValue) state=$"{t.SleepUntil.Value.In()}";
+
+								Console.WriteLine($"{t.TaskID.ToString().PadLeft(2)}: {t.Command.PadRight(longest + 1)} {state}");
+							});
+						}
+					}
+				},
+				new Command
+				{
+					Pattern = "cancel task {task}",
+					Action = (p, _) =>
+					{
+						var taskID = Int32.Parse(p["task"]);
+						var task = context.Tasks.FirstOrDefault(x => x.TaskID == taskID);
+						if (task != null) task.CanncelationSource.Cancel();
+						else Console.WriteLine("No such task");
+					}
+				},
+				new Command
+				{
+					Pattern = "cancel all tasks",
+					Action = (p, _) =>
+					{
+						context.Tasks.ForEach( t => t.CanncelationSource.Cancel());
+					}
 				}
 			};
+		}
+
+		DateTimeOffset? ParseWaitFor(string waitForParameter)
+		{
+			var delayRegex = new Regex(@"(\d+) (hour|minute|second|hour)s?");
+			var delayMatch = delayRegex.Match(waitForParameter);
+			if (delayMatch.Success)
+			{
+				TimeSpan delay = TimeSpan.Zero;
+				switch (delayMatch.Groups[2].Value)
+				{
+					case "second": delay = TimeSpan.FromSeconds(Int32.Parse(delayMatch.Groups[1].Value)); break;
+					case "minute": delay = TimeSpan.FromMinutes(Int32.Parse(delayMatch.Groups[1].Value)); break;
+					case "hour": delay = TimeSpan.FromHours(Int32.Parse(delayMatch.Groups[1].Value)); break;
+					default:
+						Console.WriteLine(delayMatch.Groups[2]);
+						return null;
+				}
+
+				return DateTimeOffset.UtcNow + delay;
+			}
+			else
+			{
+				DateTimeOffset? when = DateTimeOffset.TryParse(waitForParameter, out DateTimeOffset whenOut) ? (DateTimeOffset?)whenOut : null;
+				if (!when.HasValue) return null;
+
+				when = DateTimeOffset.UtcNow.Date.Add(when.Value.TimeOfDay);
+				if (when < DateTimeOffset.UtcNow) when = when.Value.AddDays(1);
+				return when;
+			}
 		}
 
 		List<(NodeState, Node)> FindNodesByName(string name)

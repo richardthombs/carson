@@ -1,13 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
+using System.Threading;
 
 namespace Experiment1
 {
 	class Command
 	{
 		public string Pattern;
-		public Action<Dictionary<string, string>> Action;
+		public Action<Dictionary<string, string>, BackgroundTask> Action;
 	}
 
 	class CommandParser
@@ -19,12 +20,12 @@ namespace Experiment1
 			this.grammar = grammar;
 		}
 
-		public bool Parse(string command)
+		public Action Parse(string command, BackgroundTask task)
 		{
 			foreach (var c in grammar)
 			{
 				var parameterRegex = new Regex(@"\{([\w]+)\}");
-				var commandPattern = "^" + parameterRegex.Replace(c.Pattern, @"([\w\d' ]+)") + "$";
+				var commandPattern = "^" + parameterRegex.Replace(c.Pattern, @"([\w\d': ]+)") + "$";
 				var regex = new Regex(commandPattern, RegexOptions.IgnoreCase);
 				var match = regex.Match(command);
 				if (match.Success)
@@ -35,12 +36,11 @@ namespace Experiment1
 					{
 						dictionary.Add(placeholders[m], match.Groups[m+1].Value);
 					}
-					c.Action(dictionary);
-					return true;
+					return () => c.Action(dictionary, task);
 				}
 			}
 
-			return false;
+			return null;
 		}
 
 		List<string> GetPlaceholders(string pattern)

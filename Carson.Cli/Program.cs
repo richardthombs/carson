@@ -3,14 +3,13 @@ using System.Threading.Tasks;
 using System.Collections.Generic;
 using System.Linq;
 using System.IO;
+using System.Runtime.InteropServices;
 
 using Newtonsoft.Json;
+using Newtonsoft.Json.Converters;
 
 using ZWave;
-using Newtonsoft.Json.Converters;
 using ZWave.CommandClasses;
-using System.Runtime.InteropServices;
-using System.Threading;
 
 namespace Experiment1
 {
@@ -48,10 +47,8 @@ namespace Experiment1
 				Network = network,
 				Quit = false,
 				Areas = new List<Area>(),
-				Orders = new List<StandingOrder>()
+				Tasks = new List<BackgroundTask>()
 			};
-
-			LoadState();
 
 			wallmote1 = network.nodes[18].GetCommandClass<CentralScene>();
 			wallmote2 = network.nodes[23].GetCommandClass<CentralScene>();
@@ -59,14 +56,10 @@ namespace Experiment1
 			wallmote1.Changed += wallMote1Changed;
 			wallmote2.Changed += wallMote2Changed;
 
-			// when node 18 button 1 then turn study lights on
-			// wait for node 8 alarm then turn porch lights on then wait for 15 minutes then turn porch lights off
-			// wait for 4pm then then turn porch lights on
-			// wait for 15 minutes then turn porch lights off
-
-
-
 			cli = new Cli(context);
+
+			var tasks = LoadTasks();
+			tasks?.ForEach(x => cli.Execute(x, nak: true));
 
 			var autoexec = new List<string>
 			{
@@ -88,19 +81,18 @@ namespace Experiment1
 				"name node 12 as Motion sensor 3",
 				"name node 2 as Plug 1"
 */
-				"delete orders",
-				"wait for 4pm then turn porch light on",
-				"wait for 10pm then turn porch light off",
-				"wait for 5am then turn porch light on",
-				"wait for 8am then turn porch light off",
-				"wait for 6pm then turn patio lights on",
-				"wait for 10pm then turn patio lights off"
+/*
+				"cancel all tasks",
+				"wait for 4pm then turn porch lights on then repeat",
+				"wait for 10pm then turn porch lights off then repeat",
+				"wait for 5am then turn porch lights on then repeat",
+				"wait for 8am then turn porch lights off then repeat",
+				"wait for 5pm then turn patio lights on then repeat",
+				"wait for 10pm then turn patio lights off then repeat",
+*/
+				"list tasks"
 			};
-			autoexec.ForEach(x => cli.Execute(x, false));
-
-			ScheduleOrders();
-
-			cli.Execute("list orders", false);
+			autoexec.ForEach(x => cli.Execute(x, nak: true));
 
 			Console.WriteLine("\nSystem ready");
 
@@ -109,28 +101,30 @@ namespace Experiment1
 			network.Stop();
 			zwave.Close();
 
-			SaveState();
+			SaveTasks();
 		}
 
+		static List<string> LoadTasks()
+		{
+			try
+			{
+				var json = File.ReadAllText("tasks.json");
+				return JsonConvert.DeserializeObject<List<string>>(json);
+			}
+			catch { }
 
-		static void LoadState()
+			return null;
+		}
+
+		static void SaveTasks()
 		{
 			lock (context)
 			{
-				var json = File.ReadAllText("orders.json");
-				context.Orders = JsonConvert.DeserializeObject<List<StandingOrder>>(json);
+				var tasks = context.Tasks.Where(x => !x.Completed && !x.Cancelled && x.Command.EndsWith("then repeat")).Select(x => x.Command).ToList();
+				var json = JsonConvert.SerializeObject(tasks);
+				File.WriteAllText("tasks.json", json);
 			}
 		}
-
-		static void SaveState()
-		{
-			lock (context)
-			{
-				var json = JsonConvert.SerializeObject(context.Orders);
-				File.WriteAllText("orders.json", json);
-			}
-		}
-
 
 		[DllImport("kernel32.dll", CharSet = CharSet.Auto, SetLastError = true)]
 		static extern uint SetThreadExecutionState(uint esFlags);
@@ -160,69 +154,11 @@ namespace Experiment1
 
 			switch (button)
 			{
-				case 1: cli.Execute("turn porch light on"); break;
-				case 3: cli.Execute("turn porch light off");
-					ExecuteAfter("turn porch lights off", TimeSpan.FromHours(4));
-					break;
-				case 2:
-					cli.Execute("turn patio lights on");
-					ExecuteAfter("turn patio lights off", TimeSpan.FromHours(4));
-					break;
+				case 1: cli.Execute("turn porch lights on"); break;
+				case 3: cli.Execute("turn porch lights off"); break;
+				case 2: cli.Execute("turn patio lights on"); break;
 				case 4: cli.Execute("turn patio lights off"); break;
 			}
-		}
-
-		static void ScheduleOrders()
-		{
-			foreach (var order in context.Orders)
-			{
-				var now = DateTimeOffset.UtcNow;
-				if (order.RunAt.HasValue)
-				{
-					if (order.RunAt.Value < now) order.RunAt = DateTimeOffset.UtcNow.Date.Add(order.RunAt.Value.TimeOfDay).AddDays(1);
-					order.ScheduledFor = order.RunAt;
-				}
-				else if (order.WaitFor.HasValue)
-				{
-					order.ScheduledFor = now.Add(order.WaitFor.Value);
-				}
-			}
-
-			foreach (var order in context.Orders.OrderBy(x => x.ScheduledFor.Value))
-			{
-				Task.Run(async () =>
-				{
-					while (true)
-					{
-						await ExecuteAt(order.Command, order.ScheduledFor.Value);
-						Console.WriteLine($"{DateTimeOffset.Now:t} \"{order.Command}\" executed");
-
-						var now = DateTimeOffset.UtcNow;
-						if (order.RunAt.HasValue)
-						{
-							if (order.RunAt.Value < now) order.RunAt = DateTimeOffset.UtcNow.Date.Add(order.RunAt.Value.TimeOfDay).AddDays(1);
-							order.ScheduledFor = order.RunAt;
-						}
-						else if (order.WaitFor.HasValue)
-						{
-							order.ScheduledFor = now.Add(order.WaitFor.Value);
-						}
-
-						SaveState();
-					}
-				});
-			}
-		}
-
-		static async Task ExecuteAfter(string command, TimeSpan delay, CancellationToken? cancellationToken = null)
-		{
-			await Task.Delay(delay, cancellationToken ?? CancellationToken.None);
-			cli.Execute(command);
-		}
-
-		static async Task ExecuteAt(string command, DateTimeOffset when, CancellationToken? cancellationToken = null)
-		{
-			await ExecuteAfter(command, when - DateTimeOffset.UtcNow, cancellationToken);
 		}
 	}
 
@@ -231,17 +167,5 @@ namespace Experiment1
 		public string Name;
 		public Area Parent;
 		public List<Area> Children;
-	}
-
-	class StandingOrder
-	{
-		public DateTimeOffset? RunAt;
-		public TimeSpan? WaitFor;
-		public string Command;
-
-		/// <summary>
-		/// When the scheduler will run the command
-		/// </summary>
-		public DateTimeOffset? ScheduledFor;
 	}
 }
