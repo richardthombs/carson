@@ -67,7 +67,7 @@ namespace Experiment1
 
 		public (NodeState, Node) GetNode(byte nodeID)
 		{
-			var state = nodeStates.ContainsKey(nodeID)? nodeStates[nodeID] : null;
+			var state = nodeStates.ContainsKey(nodeID) ? nodeStates[nodeID] : null;
 			var node = nodes[nodeID];
 			return (state, node);
 		}
@@ -236,7 +236,8 @@ namespace Experiment1
 			sensorAlarm.Changed += (_, e) => ReceiveReport(e.Report);
 
 			var wakeUp = node.GetCommandClass<WakeUp>();
-			wakeUp.Changed += async (_, e) => {
+			wakeUp.Changed += async (_, e) =>
+			{
 				ReceiveReport(e.Report);
 
 				var state = nodeStates[e.Report.Node.NodeID];
