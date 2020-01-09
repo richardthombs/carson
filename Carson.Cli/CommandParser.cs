@@ -32,9 +32,9 @@ namespace Experiment1
 				{
 					var placeholders = GetPlaceholders(c.Pattern);
 					var dictionary = new Dictionary<string, string>();
-					for (int m = 0; m < match.Groups.Count-1; m++)
+					for (int m = 0; m < match.Groups.Count - 1; m++)
 					{
-						dictionary.Add(placeholders[m], match.Groups[m+1].Value);
+						dictionary.Add(placeholders[m], match.Groups[m + 1].Value);
 					}
 					return () => c.Action(dictionary, task);
 				}

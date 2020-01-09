@@ -13,8 +13,8 @@ namespace Experiment1
 		public string Alias;
 
 		public bool Muted;
-		public bool Failed;		// Controller thinks node has failed
-		public bool Removed;	// No longer in the list reported by the controller
+		public bool Failed;     // Controller thinks node has failed
+		public bool Removed;    // No longer in the list reported by the controller
 
 		public DateTimeOffset? FirstFailed;
 		public DateTimeOffset? LastFailed;

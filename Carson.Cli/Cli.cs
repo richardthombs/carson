@@ -25,7 +25,7 @@ namespace Experiment1
 			this.parser = new CommandParser(grammar);
 		}
 
-		public void Execute(string command, bool nak=false)
+		public void Execute(string command, bool nak = false)
 		{
 			var fragments = command.Split(new string[] { " then " }, StringSplitOptions.RemoveEmptyEntries);
 
