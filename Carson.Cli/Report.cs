@@ -31,4 +31,17 @@ namespace Experiment1
 			return $"Type:{Type}, Value:\"{Value} {Unit}\"";
 		}
 	}
+
+	class AlarmReport
+	{
+		public ZWave.CommandClasses.AlarmType Type;
+		public byte Level;
+		public ZWave.CommandClasses.AlarmDetailType Detail;
+		public byte Unknown;
+
+		public override string ToString()
+		{
+			return $"Type:{Type}, Level:{Level}, Detail:{Detail}, Unknown:{Unknown}";
+		}
+	}
 }

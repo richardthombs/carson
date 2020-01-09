@@ -175,7 +175,7 @@ namespace Experiment1
 					{
 						context.Network.FindNodes(ns => ns.CommandClasses?.Contains(CommandClass.SensorMultiLevel) ?? false).ForEach(t =>
 						{
-							var reports = new List<Report<SensorMultiLevelReport>>{ t.Item1.TemperatureReport, t.Item1.RelativeHumidityReport, t.Item1.LuminanceReport};
+							var reports = new List<Report<SensorMultiLevelReport>> { t.Item1.TemperatureReport, t.Item1.RelativeHumidityReport, t.Item1.LuminanceReport };
 							reports.RemoveAll(x => x == null);
 
 							if (reports.Count == 0)
@@ -190,6 +190,17 @@ namespace Experiment1
 									Console.WriteLine($"{new String(' ', 30)} {reports[i].Data.ToString().PadRight(40)} {reports[i].Timestamp.Ago()}");
 								}
 							}
+						});
+					}
+				},
+				new Command
+				{
+					Pattern = "list alarms",
+					Action = p =>
+					{
+						context.Network.FindNodes(ns => ns.CommandClasses?.Contains(CommandClass.Alarm) ?? false).ForEach(t =>
+						{
+							Console.WriteLine($"Node {t.Item2}: {t.Item1.Name.PadRight(20)} {(t.Item1.AlarmReport != null? t.Item1.AlarmReport.Data.ToString() : "Unknown").PadRight(50)} {t.Item1.AlarmReport?.Timestamp.Ago() ?? ""}");
 						});
 					}
 				},

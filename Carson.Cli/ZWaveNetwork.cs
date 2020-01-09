@@ -8,6 +8,7 @@ using Newtonsoft.Json;
 
 using ZWave;
 using ZWave.CommandClasses;
+using ZWave.Channel;
 
 namespace Experiment1
 {
@@ -222,7 +223,11 @@ namespace Experiment1
 			meter.Changed += (_, e) => ReceiveReport(e.Report);
 
 			var alarm = node.GetCommandClass<Alarm>();
-			alarm.Changed += (_, e) => ReceiveReport(e.Report);
+			alarm.Changed += (_, e) =>
+			{
+				ReceiveAlarmReport(e.Report);
+				ReceiveReport(e.Report);
+			};
 
 			var sensorBinary = node.GetCommandClass<SensorBinary>();
 			sensorBinary.Changed += (_, e) => ReceiveReport(e.Report);
@@ -295,6 +300,29 @@ namespace Experiment1
 
 			var state = nodeStates[report.Node.NodeID];
 			state.BatteryReport = r;
+		}
+
+		void ReceiveAlarmReport(ZWave.CommandClasses.AlarmReport report)
+		{
+			var r = new Report<AlarmReport>
+			{
+				Timestamp = DateTime.UtcNow,
+				Data = new AlarmReport
+				{
+					Type = report.Type,
+					Level = report.Level,
+					Detail = report.Detail,
+					Unknown = report.Unknown
+				}
+			};
+
+			var state = nodeStates[report.Node.NodeID];
+			state.AlarmReport = r;
+			if (state.CommandClasses == null || !state.CommandClasses.Contains(CommandClass.Alarm))
+			{
+				if (state.CommandClasses == null) state.CommandClasses = new List<CommandClass>();
+				state.CommandClasses.Add(CommandClass.Alarm);
+			}
 		}
 
 		void ReceiveSensorMultiLevelReport(ZWave.CommandClasses.SensorMultiLevelReport report)
