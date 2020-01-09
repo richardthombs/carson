@@ -369,7 +369,12 @@ namespace Experiment1
 					{
 						context.Tasks.ForEach( t => t.CanncelationSource.Cancel());
 					}
-				}
+				},
+				new Command
+				{
+					Pattern = "cls",
+					Action = (p, _) => Console.Clear()
+		}
 			};
 		}
 
