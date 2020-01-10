@@ -374,7 +374,19 @@ namespace Experiment1
 				{
 					Pattern = "cls",
 					Action = (p, _) => Console.Clear()
-		}
+				},
+				new Command
+				{
+					Pattern = "query node {node}",
+					Action = (p, _) =>
+					{
+						var id = Byte.Parse(p["node"]);
+						var t = context.Network.GetNode(id);
+						if (t.Item1 == null || t.Item2 == null) Console.WriteLine($"Node {p["node"]} does not exist");
+						context.Network.QueryNode(t.Item2).Wait();
+						Console.WriteLine();
+					}
+				}
 			};
 		}
 

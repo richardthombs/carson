@@ -123,7 +123,7 @@ namespace Experiment1
 			if (messages) Console.WriteLine();
 		}
 
-		async Task QueryNode(Node n)
+		public async Task QueryNode(Node n)
 		{
 			var state = nodeStates[n.NodeID];
 
@@ -131,9 +131,27 @@ namespace Experiment1
 			{
 				Console.Write($"{DateTimeOffset.Now:t} Querying node {n}...");
 				var classes = await n.GetSupportedCommandClasses();
+				Console.WriteLine("OK");
+
+				classes.ToList().ForEach(x => Console.WriteLine($"{x.Class} v{x.Version}"));
 				state.RecordContact();
 				state.CommandClasses = classes.Select(x => x.Class).ToList();
-				Console.WriteLine("OK");
+
+				if (state.CommandClasses.Contains(CommandClass.MultiChannel))
+				{
+					var multiChannel = n.GetCommandClass<MultiChannel>();
+					var endpoints = await multiChannel.DiscoverEndpoints();
+					Console.WriteLine($"\nNode contains {endpoints.NumberOfIndividualEndPoints} individual endpoints and {endpoints.NumberOfAggregatedEndPoints} aggregated endpoints. {(endpoints.AllEndpointsAreIdentical ? "Endpoints are identical " : "")} {(endpoints.IsDynamicNumberOfEndpoints ? "Endpoints are dynamic" : "")}");
+
+					for (byte e = 1; e <= endpoints.NumberOfIndividualEndPoints; e++)
+					{
+						Console.Write($"\nQuerying endpoint {e}...");
+						var caps = await multiChannel.GetEndPointCapabilities(e);
+						Console.WriteLine("OK");
+						caps.SupportedCommandClasses.ToList().ForEach(x => Console.WriteLine($"{x}"));
+					}
+				}
+
 			}
 			catch
 			{
@@ -251,7 +269,7 @@ namespace Experiment1
 
 				if (state.CommandClasses.Contains(ZWave.Channel.CommandClass.Battery) && (state.BatteryReport == null || state.BatteryReport.Timestamp.IsOlderThan(TimeSpan.FromDays(1))))
 				{
-					Console.WriteLine("{DateTimeOffset.Now:t} Requesting battery state...");
+					Console.WriteLine($"{DateTimeOffset.Now:t} Requesting battery state...");
 					await node.GetCommandClass<Battery>().Get();
 				}
 			};
@@ -264,9 +282,6 @@ namespace Experiment1
 
 			var sceneActivation = node.GetCommandClass<SceneActivation>();
 			sceneActivation.Changed += (_, e) => ReceiveReport(e.Report);
-
-			var multiChannel = node.GetCommandClass<MultiChannel>();
-			multiChannel.Changed += (_, e) => ReceiveReport(e.Report);
 
 			var switchMultiLevel = node.GetCommandClass<SwitchMultiLevel>();
 			switchMultiLevel.Changed += (_, e) => ReceiveReport(e.Report);
