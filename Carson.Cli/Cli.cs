@@ -382,10 +382,115 @@ namespace Experiment1
 					{
 						var id = Byte.Parse(p["node"]);
 						var t = context.Network.GetNode(id);
-						if (t.Item1 == null || t.Item2 == null) Console.WriteLine($"Node {p["node"]} does not exist");
+						if (t.Item1 == null || t.Item2 == null)
+						{
+							Console.WriteLine($"Node {p["node"]} does not exist");
+							return;
+						}
+
 						context.Network.QueryNode(t.Item2).Wait();
 						Console.WriteLine();
 					}
+				},
+				new Command
+				{
+					Pattern = "get node {node} association groups",
+					Action = (p,_) => Task.Run(async () => {
+					{
+						var id = Byte.Parse(p["node"]);
+						var t = context.Network.GetNode(id);
+						if (t.Item1 == null || t.Item2 == null)
+						{
+							Console.WriteLine($"Node {p["node"]} does not exist");
+							return;
+						}
+
+						var assoc = t.Item2.GetCommandClass<Association>();
+						var groups = await assoc.GetGroups();
+
+						for (byte g = 1; g <= groups.GroupsSupported; g++)
+						{
+							var group = await assoc.Get(g);
+							Console.Write($"  Group {g} contains ");
+							if (group.Nodes.Length > 0)
+							{
+								foreach (var n in group.Nodes)
+								{
+									Console.Write($"{n:D2} ");
+								}
+								Console.WriteLine();
+							}
+							else
+							{
+								Console.WriteLine("nothing");
+							}
+						}
+					}
+					}).Wait()
+				},
+				new Command
+				{
+					Pattern = "add node {nodeA} to association group {group} of node {nodeB}",
+					Action = (p, _) => Task.Run(async () =>
+					{
+						var idA = Byte.Parse(p["nodeA"]);
+						var tA = context.Network.GetNode(idA);
+						if (tA.Item1 == null || tA.Item2 == null)
+						{
+							Console.WriteLine($"Node {p["nodeA"]} does not exist");
+							return;
+						}
+
+						var idB = Byte.Parse(p["nodeB"]);
+						var tB = context.Network.GetNode(idB);
+						if (tB.Item1 == null || tB.Item2 == null)
+						{
+							Console.WriteLine($"Node {p["nodeB"]} does not exist");
+							return;
+						}
+
+						var idG = Byte.Parse(p["group"]);
+
+						var assoc = tB.Item2.GetCommandClass<Association>();
+						var groups = await assoc.GetGroups();
+						if (idG < 1 || idG > groups.GroupsSupported) Console.WriteLine("Node does not have that association group");
+						else
+						{
+							await assoc.Add(idG, tA.Item2.NodeID);
+						}
+					})
+				},
+				new Command
+				{
+					Pattern = "remove node {nodeA} from association group {group} of node {nodeB}",
+					Action = (p, _) => Task.Run(async () =>
+					{
+						var idA = Byte.Parse(p["nodeA"]);
+						var tA = context.Network.GetNode(idA);
+						if (tA.Item1 == null || tA.Item2 == null)
+						{
+							Console.WriteLine($"Node {p["nodeA"]} does not exist");
+							return;
+						}
+
+						var idB = Byte.Parse(p["nodeB"]);
+						var tB = context.Network.GetNode(idB);
+						if (tB.Item1 == null || tB.Item2 == null)
+						{
+							Console.WriteLine($"Node {p["nodeB"]} does not exist");
+							return;
+						}
+
+						var idG = Byte.Parse(p["group"]);
+
+						var assoc = tB.Item2.GetCommandClass<Association>();
+						var groups = await assoc.GetGroups();
+						if (idG < 1 || idG > groups.GroupsSupported) Console.WriteLine("Node does not have that association group");
+						else
+						{
+							await assoc.Remove(idG, tA.Item2.NodeID);
+						}
+					})
 				}
 			};
 		}
