@@ -39,15 +39,27 @@ namespace Experiment1
 			nodes = await z.GetNodes();
 			await ListNodes(nodes);
 			await QueryNodes(nodes);
-			await HealthCheck(nodes);
 
 			SaveState();
 			SubscribeAll(nodes);
+
+			HealthCheckLoop().DoNotAwait();
+
+			Console.WriteLine("Startup finished");
 		}
 
 		public void Stop()
 		{
 			SaveState();
+		}
+
+		async Task HealthCheckLoop()
+		{
+			while (true)
+			{
+				await Task.Delay(TimeSpan.FromDays(1));
+				await HealthCheck(nodes);
+			}
 		}
 
 		public List<(NodeState, Node)> FindNodes(Predicate<NodeState> predicate)
@@ -374,4 +386,9 @@ namespace Experiment1
 			OnStateChange?.Invoke();
 		}
 	}
+}
+
+public static class TaskExtensions
+{
+	public static void DoNotAwait(this Task task) { }
 }
