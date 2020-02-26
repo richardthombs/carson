@@ -491,6 +491,50 @@ namespace Experiment1
 							await assoc.Remove(idG, tA.Item2.NodeID);
 						}
 					})
+				},
+				new Command
+				{
+					Pattern = "get node {node} parameter {p}",
+					Action = async (p,_) =>
+					{
+						var id = Byte.Parse(p["node"]);
+						var n = context.Network.GetNode(id);
+						if (n.Item1 == null || n.Item2 == null)
+						{
+							Console.WriteLine($"Node {p["node"]} does not exist");
+							return;
+						}
+
+						var param = Byte.Parse(p["p"]);
+
+						var config = n.Item2.GetCommandClass<Configuration>();
+						var report = await config.Get(param);
+
+						Console.WriteLine(report);
+					}
+				},
+				new Command
+				{
+					Pattern = "set node {node} parameter {p} to byte {v}",
+					Action = async (p,_) =>
+					{
+						var id = Byte.Parse(p["node"]);
+						var n = context.Network.GetNode(id);
+						if (n.Item1 == null || n.Item2 == null)
+						{
+							Console.WriteLine($"Node {p["node"]} does not exist");
+							return;
+						}
+
+						var param = Byte.Parse(p["p"]);
+						var value = Byte.Parse(p["v"]);
+
+						var config = n.Item2.GetCommandClass<Configuration>();
+						await config.Set(param,value);
+
+						var report = await config.Get(param);
+						Console.WriteLine(report);
+					}
 				}
 			};
 		}

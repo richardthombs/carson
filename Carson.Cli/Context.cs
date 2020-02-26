@@ -7,5 +7,6 @@ namespace Experiment1
 		public ZWaveNetwork Network;
 		public List<Area> Areas;
 		public List<BackgroundTask> Tasks;
+		public TwilightInfo Twilight;
 	}
 }

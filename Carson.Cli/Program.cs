@@ -15,9 +15,9 @@ namespace Experiment1
 {
 	class Program
 	{
-		static CentralScene wallmote1;
-		static CentralScene wallmote2;
 		static Cli cli;
+		static IncrementalStateSwitch wallmote1_button1;
+		static IncrementalStateSwitch wallmote2_button1;
 
 		static void Main()
 		{
@@ -32,6 +32,7 @@ namespace Experiment1
 
 			// Start the network
 			var controller = CreateController("COM3");
+			//controller.Channel.Log = Console.Out;
 			var nodeStates = LoadStates();
 			var network = new ZWaveNetwork(controller, nodeStates)
 			{
@@ -39,13 +40,30 @@ namespace Experiment1
 			};
 			Task.Run(() => network.Start()).Wait();
 
+			var twilight = LoadTwilight();
+
 			// Build a context for commands to run in
 			var context = new Context
 			{
 				Network = network,
 				Areas = new List<Area>(),
-				Tasks = new List<BackgroundTask>()
+				Tasks = new List<BackgroundTask>(),
+				Twilight = twilight
 			};
+
+			// Start the twilight tracker
+			Task.Run(async () =>
+			{
+				while (true)
+				{
+					var sleepFor = DateTimeOffset.Now.Date.AddDays(1) - DateTimeOffset.Now;
+					await Task.Delay(sleepFor);
+					var twilightSvc = new TwilightService();
+					var twilight = await twilightSvc.Get();
+					context.Twilight = twilight;
+					SaveTwilight(context.Twilight);
+				}
+			});
 
 			// Create the command line interface
 			cli = new Cli(context);
@@ -59,10 +77,43 @@ namespace Experiment1
 			autoexec.ForEach(x => cli.Execute(x, nak: true));
 
 			// TODO: Hack in Wallmote button handlers until I write some built-in support
-			wallmote1 = network.nodes[18].GetCommandClass<CentralScene>();
-			wallmote2 = network.nodes[23].GetCommandClass<CentralScene>();
+			wallmote1_button1 = new IncrementalStateSwitch(cli)
+			{
+				StateCommands = new string[]
+				{
+					"turn study desk lamp on",
+					"turn study ceiling lights on",
+					"turn study lights off"
+				}
+			};
+			var wallmote1 = network.nodes[18].GetCommandClass<CentralScene>();
 			wallmote1.Changed += wallMote1Changed;
+
+			wallmote2_button1 = new IncrementalStateSwitch(cli)
+			{
+				StateCommands = new string[]
+				{
+					"turn porch indoor light on",
+					"turn porch outdoor light on",
+					"turn drive lights on",
+					"turn porch lights off then turn drive lights off"
+				}
+			};
+			var wallmote2 = network.nodes[23].GetCommandClass<CentralScene>();
 			wallmote2.Changed += wallMote2Changed;
+
+			// TODO: Hack in outside motion sensors also
+			var motionDetection = new DelayedSwitch(cli)
+			{
+				TriggerCommand = "turn drive lights on then turn porch lights on then turn patio lights on",
+				ResetCommand = "turn drive lights off then turn porch lights off then turn patio lights off",
+				ResetDelay = TimeSpan.FromMinutes(30)
+			};
+
+			var steinel1 = network.nodes[31].GetCommandClass<Alarm>();
+			steinel1.Changed += (a, b) => motionDetection.Trigger();
+			var steinel2 = network.nodes[32].GetCommandClass<Alarm>();
+			steinel2.Changed += (a, b) => motionDetection.Trigger();
 
 			Console.WriteLine("\nSystem ready");
 
@@ -123,6 +174,28 @@ namespace Experiment1
 			File.WriteAllText("tasks.json", json);
 		}
 
+		static TwilightInfo LoadTwilight()
+		{
+			try
+			{
+				var json = File.ReadAllText("twilight.json");
+				return JsonConvert.DeserializeObject<TwilightInfo>(json);
+			}
+			catch { }
+
+			return new TwilightInfo
+			{
+				TwilightEnd = DateTimeOffset.Now.AddHours(7),
+				TwilightStart = DateTimeOffset.Now.Date.AddHours(17)
+			};
+		}
+
+		static void SaveTwilight(TwilightInfo twilight)
+		{
+			var json = JsonConvert.SerializeObject(twilight);
+			File.WriteAllText("twilight.json", json);
+		}
+
 		static List<string> LoadAutoexec()
 		{
 			return new List<string>
@@ -172,10 +245,10 @@ namespace Experiment1
 
 			switch (button)
 			{
-				case 1: cli.Execute("turn study lights on"); break;
+				case 1: wallmote1_button1.Trigger(); break;
 				case 3: cli.Execute("turn study lights off"); break;
-				case 2: cli.Execute("turn patio lights on"); break;
-				case 4: cli.Execute("turn patio lights off"); break;
+				case 2: cli.Execute("turn snug lights on"); break;
+				case 4: cli.Execute("turn snug lights off"); break;
 			}
 		}
 
@@ -186,18 +259,11 @@ namespace Experiment1
 
 			switch (button)
 			{
-				case 1: cli.Execute("turn porch lights on"); break;
-				case 3: cli.Execute("turn porch lights off"); break;
+				case 1: wallmote2_button1.Trigger(); break;
+				case 3: cli.Execute("turn porch lights off then turn drive lights off"); break;
 				case 2: cli.Execute("turn patio lights on"); break;
 				case 4: cli.Execute("turn patio lights off"); break;
 			}
 		}
-	}
-
-	class Area
-	{
-		public string Name;
-		public Area Parent;
-		public List<Area> Children;
 	}
 }
