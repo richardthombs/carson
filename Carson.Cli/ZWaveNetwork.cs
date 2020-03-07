@@ -164,6 +164,22 @@ namespace Experiment1
 					}
 				}
 
+				if (state.CommandClasses.Contains(CommandClass.ManufacturerSpecific))
+				{
+					var manu = n.GetCommandClass<ManufacturerSpecific>();
+					var manuReport = await manu.Get();
+					state.ManufacturerReport = new Report<ManufacturerSpecificReport>
+					{
+						Data = new ManufacturerSpecificReport
+						{
+							ManufacturerID = manuReport.ManufacturerID,
+							ProductType = manuReport.ProductType,
+							ProductID = manuReport.ProductID
+						},
+						Timestamp = DateTimeOffset.UtcNow
+					};
+				}
+
 			}
 			catch
 			{

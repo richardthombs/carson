@@ -36,6 +36,7 @@ namespace Experiment1
 		public Report<SensorMultiLevelReport> LuminanceReport;
 		public Report<SensorMultiLevelReport> RelativeHumidityReport;
 		public Report<AlarmReport> AlarmReport;
+		public Report<ManufacturerSpecificReport> ManufacturerReport;
 
 		public void RecordFailure()
 		{

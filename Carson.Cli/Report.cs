@@ -44,4 +44,16 @@ namespace Experiment1
 			return $"Type:{Type}, Level:{Level}, Detail:{Detail}, Unknown:{Unknown}";
 		}
 	}
+
+	class ManufacturerSpecificReport
+	{
+		public ushort ManufacturerID;
+		public ushort ProductType;
+		public ushort ProductID;
+
+		public override string ToString()
+		{
+			return $"ManufacturerID:{ManufacturerID:X4}, ProductType:{ProductType:X4}, ProductID:{ProductID:X4}";
+		}
+	}
 }

@@ -217,6 +217,7 @@ namespace Experiment1
 					{
 						Console.Write($"Node {t.Item1.NodeID:D3}: {(t.Item1.Name ?? "").PadRight(20)} ");
 						Console.Write($"{t.Item1.LastContact.Ago().PadRight(25)} ");
+						Console.Write($"{t.Item1.ManufacturerReport?.Data.ManufacturerID:X4}:{t.Item1.ManufacturerReport?.Data.ProductID:X4}");
 						Console.Write($"{(t.Item1.Muted? "(Muted)" : "").PadRight(7)} ");
 						Console.Write($"{(t.Item1.Failed? "(Failed)" : "").PadRight(8)} ");
 						Console.Write($"{(t.Item1.Removed? "(Removed)" : "").PadRight(9)} ");
