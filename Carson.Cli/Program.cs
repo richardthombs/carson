@@ -83,7 +83,6 @@ namespace Experiment1
 				{
 					"turn study desk lamp on",
 					"turn study ceiling lights on",
-					"turn study lights off"
 				}
 			};
 			var wallmote1 = network.nodes[18].GetCommandClass<CentralScene>();
@@ -93,10 +92,9 @@ namespace Experiment1
 			{
 				StateCommands = new string[]
 				{
-					"turn porch indoor light on",
+					"turn porch indoor light",
 					"turn porch outdoor light on",
-					"turn drive lights on",
-					"turn porch lights off then turn drive lights off"
+					"turn driveway lights on",
 				}
 			};
 			var wallmote2 = network.nodes[23].GetCommandClass<CentralScene>();
@@ -105,9 +103,9 @@ namespace Experiment1
 			// TODO: Hack in outside motion sensors also
 			var motionDetection = new DelayedSwitch(cli)
 			{
-				TriggerCommand = "turn drive lights on then turn porch lights on then turn patio lights on",
-				ResetCommand = "turn drive lights off then turn porch lights off then turn patio lights off",
-				ResetDelay = TimeSpan.FromMinutes(30)
+				TriggerCommand = "turn driveway lights on then turn porch lights on then turn patio lights on",
+				ResetCommand = "turn driveway lights on then turn porch lights off then turn patio lights off",
+				ResetDelay = TimeSpan.FromMinutes(15)
 			};
 
 			var steinel1 = network.nodes[31].GetCommandClass<Alarm>();
@@ -241,28 +239,26 @@ namespace Experiment1
 		static void wallMote1Changed(object sender, ReportEventArgs<CentralSceneReport> e)
 		{
 			var button = e.Report.SceneNumber;
-			Console.WriteLine($"{DateTimeOffset.Now:t} Wallmote 1 button {button} pressed");
 
 			switch (button)
 			{
-				case 1: wallmote1_button1.Trigger(); break;
-				case 3: cli.Execute("turn study lights off"); break;
-				case 2: cli.Execute("turn snug lights on"); break;
-				case 4: cli.Execute("turn snug lights off"); break;
+				case 1: wallmote1_button1.Inc(); break;
+				case 3: cli.Execute("turn study lights off", echo: true); break;
+				case 2: cli.Execute("turn snug lights on", echo: true); break;
+				case 4: cli.Execute("turn snug lights off", echo: true); break;
 			}
 		}
 
 		static void wallMote2Changed(object sender, ReportEventArgs<CentralSceneReport> e)
 		{
 			var button = e.Report.SceneNumber;
-			Console.WriteLine($"{DateTimeOffset.Now:t} Wallmote 2 button {button} pressed");
 
 			switch (button)
 			{
-				case 1: wallmote2_button1.Trigger(); break;
-				case 3: cli.Execute("turn porch lights off then turn drive lights off"); break;
-				case 2: cli.Execute("turn patio lights on"); break;
-				case 4: cli.Execute("turn patio lights off"); break;
+				case 1: wallmote2_button1.Inc(); break;
+				case 3: cli.Execute("turn driveway lights off then turn porch lights off then turn patio lights off", echo: true); break;
+				case 2: cli.Execute("turn patio lights on", echo: true); break;
+				case 4: cli.Execute("turn patio lights off", echo: true); break;
 			}
 		}
 	}

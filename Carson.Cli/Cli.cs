@@ -25,7 +25,7 @@ namespace Experiment1
 			this.parser = new CommandParser(grammar);
 		}
 
-		public void Execute(string command, bool nak = false)
+		public void Execute(string command, bool nak = false, bool echo = false)
 		{
 			var fragments = command.Split(new string[] { " then " }, StringSplitOptions.RemoveEmptyEntries);
 
@@ -56,7 +56,7 @@ namespace Experiment1
 								fragment = fragments[f];
 							}
 
-							var ok = ExecuteFragment(fragment, task);
+							var ok = ExecuteFragment(fragment, task, echo: echo);
 							if (ok && !IsWaitFor(fragment)) Console.WriteLine($"Task {task.TaskID} executed \"{fragment}\"");
 							if (!ok) Console.WriteLine($"Task {task.TaskID} contains a command I don't understand: \"{fragment}\"");
 						}
@@ -74,7 +74,7 @@ namespace Experiment1
 				var oks = new List<bool>();
 				foreach (var fragment in fragments)
 				{
-					var ok = ExecuteFragment(fragment);
+					var ok = ExecuteFragment(fragment, echo: echo);
 					if (!ok) Console.WriteLine($"Sorry, I don't understand \"{fragment}\"");
 					oks.Add(ok);
 				}
@@ -102,11 +102,12 @@ namespace Experiment1
 		}
 
 
-		bool ExecuteFragment(string command, BackgroundTask task = null)
+		bool ExecuteFragment(string command, BackgroundTask task = null, bool echo = false)
 		{
 			var action = parser.Parse(command, task);
 			if (action == null) return false;
 			action();
+			if (echo) Console.WriteLine($"\"{command}\" executed");
 			return true;
 		}
 

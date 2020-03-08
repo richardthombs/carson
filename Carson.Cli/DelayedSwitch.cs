@@ -21,14 +21,14 @@ namespace Experiment1
 
 		public void Trigger()
 		{
-			if (TriggerCommand != null) cli.Execute(TriggerCommand);
+			if (TriggerCommand != null) cli.Execute(TriggerCommand, echo: true);
 
 			tokenSource?.Cancel();
 			tokenSource = new CancellationTokenSource();
 
 			var task = Task.Delay(ResetDelay, tokenSource.Token).ContinueWith(x =>
 			{
-				if (!x.IsCanceled && ResetCommand != null) cli.Execute(ResetCommand);
+				if (!x.IsCanceled && ResetCommand != null) cli.Execute(ResetCommand, echo: true);
 			});
 		}
 	}

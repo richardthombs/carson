@@ -1,3 +1,5 @@
+using System;
+
 namespace Experiment1
 {
 	class IncrementalStateSwitch
@@ -12,10 +14,16 @@ namespace Experiment1
 
 		public string[] StateCommands { get; set; }
 
-		public void Trigger()
+		public void Inc()
 		{
-			cli.Execute(StateCommands[state]);
-			if (++state >= StateCommands.Length) state = 0;
+			cli.Execute(StateCommands[state], echo: true);
+			state = Math.Min(state + 1, StateCommands.Length - 1);
+		}
+
+		public void Dec()
+		{
+			cli.Execute(StateCommands[state], echo: true);
+			state = Math.Max(state - 1, 0);
 		}
 	}
 }
