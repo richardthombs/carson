@@ -11,6 +11,14 @@ using Newtonsoft.Json.Converters;
 using ZWave;
 using ZWave.CommandClasses;
 
+// wait for 7am then reset state dark then repeat
+// wait for 9pm then set state dark then repeat
+// dark: wait for driveway then turn driveway lights on then wait for 30 minutes then turn driveway lights on
+// not dark: wait for driveway then announce "motion in driveway" then wait for 30 minutes then repeat
+// wait for wallmote button 1 then trigger incremental switch 1
+// wait for wallmote button 3 then reset incremental switch 1
+// wait for driveway then trigger motion sensor 1
+
 namespace Experiment1
 {
 	class Program
@@ -83,7 +91,8 @@ namespace Experiment1
 				{
 					"turn study desk lamp on",
 					"turn study ceiling lights on",
-				}
+				},
+				ResetCommand = "turn study lights off"
 			};
 			var wallmote1 = network.nodes[18].GetCommandClass<CentralScene>();
 			wallmote1.Changed += wallMote1Changed;
@@ -92,26 +101,27 @@ namespace Experiment1
 			{
 				StateCommands = new string[]
 				{
-					"turn porch indoor light",
-					"turn porch outdoor light on",
+					"turn indoor porch light on",
+					"turn outdoor porch light on",
 					"turn driveway lights on",
-				}
+				},
+				ResetCommand = "turn driveway lights off then turn porch lights off then turn patio lights off"
 			};
 			var wallmote2 = network.nodes[23].GetCommandClass<CentralScene>();
 			wallmote2.Changed += wallMote2Changed;
 
 			// TODO: Hack in outside motion sensors also
-			var motionDetection = new DelayedSwitch(cli)
+			var motionDetector = new DelayedSwitch(cli)
 			{
 				TriggerCommand = "turn driveway lights on then turn porch lights on then turn patio lights on",
-				ResetCommand = "turn driveway lights on then turn porch lights off then turn patio lights off",
+				ResetCommand = "turn driveway lights off then turn porch lights off then turn patio lights off",
 				ResetDelay = TimeSpan.FromMinutes(15)
 			};
 
 			var steinel1 = network.nodes[31].GetCommandClass<Alarm>();
-			steinel1.Changed += (a, b) => motionDetection.Trigger();
+			steinel1.Changed += (a, b) => motionDetector.Trigger();
 			var steinel2 = network.nodes[32].GetCommandClass<Alarm>();
-			steinel2.Changed += (a, b) => motionDetection.Trigger();
+			steinel2.Changed += (a, b) => motionDetector.Trigger();
 
 			Console.WriteLine("\nSystem ready");
 
@@ -242,8 +252,8 @@ namespace Experiment1
 
 			switch (button)
 			{
-				case 1: wallmote1_button1.Inc(); break;
-				case 3: cli.Execute("turn study lights off", echo: true); break;
+				case 1: wallmote1_button1.Trigger(); break;
+				case 3: wallmote1_button1.Reset(); break;
 				case 2: cli.Execute("turn snug lights on", echo: true); break;
 				case 4: cli.Execute("turn snug lights off", echo: true); break;
 			}
@@ -255,8 +265,8 @@ namespace Experiment1
 
 			switch (button)
 			{
-				case 1: wallmote2_button1.Inc(); break;
-				case 3: cli.Execute("turn driveway lights off then turn porch lights off then turn patio lights off", echo: true); break;
+				case 1: wallmote2_button1.Trigger(); break;
+				case 3: wallmote2_button1.Reset(); break;
 				case 2: cli.Execute("turn patio lights on", echo: true); break;
 				case 4: cli.Execute("turn patio lights off", echo: true); break;
 			}

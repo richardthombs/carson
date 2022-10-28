@@ -1,0 +1,651 @@
+{
+  "1": {
+    "NodeID": 1,
+    "Name": "controller",
+    "Muted": false,
+    "Failed": false,
+    "Removed": false,
+    "FailCount": 0,
+    "HasBattery": false,
+    "FirstContact": "2020-03-06T08:17:49.2077449+00:00",
+    "LastContact": "2020-03-06T08:17:49.207747+00:00",
+    "CommandClasses": [],
+    "GenericType": "StaticController",
+    "FirstAdded": "2020-03-06T08:17:47.026312+00:00"
+  },
+  "2": {
+    "NodeID": 2,
+    "Name": "kitchen wall plug",
+    "Muted": true,
+    "Failed": false,
+    "Removed": false,
+    "FailCount": 0,
+    "HasBattery": false,
+    "FirstContact": "2020-03-06T08:17:59.6948137+00:00",
+    "LastContact": "2020-03-06T19:43:39.5896434+00:00",
+    "CommandClasses": [
+      "Basic",
+      "SwitchBinary",
+      "SwitchMultiLevel",
+      "Meter",
+      "Color",
+      "Configuration",
+      "ManufacturerSpecific",
+      "Clock",
+      "Association",
+      "Version"
+    ],
+    "GenericType": "SwitchBinary",
+    "FirstAdded": "2020-03-06T08:17:47.1084041+00:00",
+    "ManufacturerReport": {
+      "Timestamp": "2020-03-06T17:50:03.1380719+00:00",
+      "Data": {
+        "ManufacturerID": 134,
+        "ProductType": 3,
+        "ProductID": 96
+      }
+    }
+  },
+  "8": {
+    "NodeID": 8,
+    "Name": "Node 8",
+    "Muted": false,
+    "Failed": false,
+    "Removed": false,
+    "FailCount": 0,
+    "HasBattery": true,
+    "GenericType": "SensorNotification",
+    "FirstAdded": "2020-03-06T08:17:47.1982271+00:00"
+  },
+  "10": {
+    "NodeID": 10,
+    "Name": "study desk lamp",
+    "Alias": "study lights",
+    "Muted": false,
+    "Failed": false,
+    "Removed": false,
+    "FailCount": 0,
+    "HasBattery": false,
+    "FirstContact": "2020-03-06T08:18:01.7567124+00:00",
+    "LastContact": "2020-03-06T17:59:18.4943701+00:00",
+    "CommandClasses": [
+      "Basic",
+      "SwitchMultiLevel",
+      "Color",
+      "Configuration",
+      "ManufacturerSpecific",
+      "Association",
+      "Version"
+    ],
+    "GenericType": "SwitchMultiLevel",
+    "FirstAdded": "2020-03-06T08:17:47.2934789+00:00",
+    "ManufacturerReport": {
+      "Timestamp": "2020-03-06T17:59:18.5943029+00:00",
+      "Data": {
+        "ManufacturerID": 305,
+        "ProductType": 2,
+        "ProductID": 3
+      }
+    }
+  },
+  "11": {
+    "NodeID": 11,
+    "Name": "Node 11",
+    "Muted": false,
+    "Failed": true,
+    "Removed": false,
+    "FirstFailed": "2020-03-06T17:43:13.7279266+00:00",
+    "LastFailed": "2020-03-06T17:54:44.4832961+00:00",
+    "FailCount": 2,
+    "HasBattery": true,
+    "GenericType": "SensorNotification",
+    "FirstAdded": "2020-03-06T08:17:47.3800739+00:00"
+  },
+  "12": {
+    "NodeID": 12,
+    "Name": "Node 12",
+    "Muted": true,
+    "Failed": true,
+    "Removed": false,
+    "FailCount": 0,
+    "HasBattery": true,
+    "FirstContact": "2020-03-06T08:25:25.0569864+00:00",
+    "LastContact": "2020-03-06T19:35:22.4681645+00:00",
+    "CommandClasses": [
+      "Alarm"
+    ],
+    "GenericType": "SensorNotification",
+    "FirstAdded": "2020-03-06T08:17:47.4716418+00:00",
+    "AlarmReport": {
+      "Timestamp": "2020-03-06T19:35:22.4681551+00:00",
+      "Data": {
+        "Type": "General",
+        "Level": 0,
+        "Detail": "None",
+        "Unknown": 0
+      }
+    }
+  },
+  "13": {
+    "NodeID": 13,
+    "Name": "study ceiling lights",
+    "Alias": "study lights",
+    "Muted": false,
+    "Failed": false,
+    "Removed": false,
+    "FailCount": 0,
+    "HasBattery": false,
+    "FirstContact": "2020-03-06T08:18:10.4603221+00:00",
+    "LastContact": "2020-03-06T17:46:20.4691701+00:00",
+    "CommandClasses": [
+      "Basic",
+      "SwitchBinary",
+      "Configuration",
+      "Alarm",
+      "ManufacturerSpecific",
+      "Association",
+      "Version"
+    ],
+    "GenericType": "SwitchBinary",
+    "FirstAdded": "2020-03-06T08:17:47.5623424+00:00",
+    "ManufacturerReport": {
+      "Timestamp": "2020-03-06T17:46:20.5661107+00:00",
+      "Data": {
+        "ManufacturerID": 96,
+        "ProductType": 4,
+        "ProductID": 8
+      }
+    }
+  },
+  "14": {
+    "NodeID": 14,
+    "Name": "outdoor porch light",
+    "Alias": "porch lights",
+    "Muted": false,
+    "Failed": false,
+    "Removed": false,
+    "FailCount": 0,
+    "HasBattery": false,
+    "FirstContact": "2020-03-06T08:18:23.4881633+00:00",
+    "LastContact": "2020-03-06T17:55:12.3028628+00:00",
+    "CommandClasses": [
+      "Basic",
+      "SwitchMultiLevel",
+      "Color",
+      "Configuration",
+      "ManufacturerSpecific",
+      "Association",
+      "Version"
+    ],
+    "GenericType": "SwitchMultiLevel",
+    "FirstAdded": "2020-03-06T08:17:47.6562363+00:00",
+    "ManufacturerReport": {
+      "Timestamp": "2020-03-06T17:55:12.4983569+00:00",
+      "Data": {
+        "ManufacturerID": 305,
+        "ProductType": 2,
+        "ProductID": 3
+      }
+    }
+  },
+  "15": {
+    "NodeID": 15,
+    "Name": "Node 15",
+    "Muted": false,
+    "Failed": true,
+    "Removed": false,
+    "FirstFailed": "2020-03-06T08:18:36.8515696+00:00",
+    "LastFailed": "2020-03-06T17:43:47.2179779+00:00",
+    "FailCount": 6,
+    "HasBattery": false,
+    "GenericType": "SwitchMultiLevel",
+    "FirstAdded": "2020-03-06T08:17:47.7427483+00:00"
+  },
+  "16": {
+    "NodeID": 16,
+    "Name": "patio lights",
+    "Muted": false,
+    "Failed": false,
+    "Removed": false,
+    "FailCount": 0,
+    "HasBattery": false,
+    "FirstContact": "2020-03-06T08:24:29.5986392+00:00",
+    "LastContact": "2020-03-06T17:44:06.6937847+00:00",
+    "CommandClasses": [
+      "Basic",
+      "SwitchMultiLevel",
+      "Color",
+      "Configuration",
+      "ManufacturerSpecific",
+      "Association",
+      "Version"
+    ],
+    "GenericType": "SwitchMultiLevel",
+    "FirstAdded": "2020-03-06T08:17:47.8334816+00:00",
+    "ManufacturerReport": {
+      "Timestamp": "2020-03-06T17:44:13.9156673+00:00",
+      "Data": {
+        "ManufacturerID": 305,
+        "ProductType": 2,
+        "ProductID": 3
+      }
+    }
+  },
+  "17": {
+    "NodeID": 17,
+    "Name": "patio lights",
+    "Muted": false,
+    "Failed": false,
+    "Removed": false,
+    "FailCount": 0,
+    "HasBattery": false,
+    "FirstContact": "2020-03-06T08:23:07.2165963+00:00",
+    "LastContact": "2020-03-06T17:44:28.1270237+00:00",
+    "CommandClasses": [
+      "Basic",
+      "SwitchMultiLevel",
+      "Color",
+      "Configuration",
+      "ManufacturerSpecific",
+      "Association",
+      "Version"
+    ],
+    "GenericType": "SwitchMultiLevel",
+    "FirstAdded": "2020-03-06T08:17:47.9268671+00:00",
+    "ManufacturerReport": {
+      "Timestamp": "2020-03-06T17:44:28.3325767+00:00",
+      "Data": {
+        "ManufacturerID": 305,
+        "ProductType": 2,
+        "ProductID": 3
+      }
+    }
+  },
+  "18": {
+    "NodeID": 18,
+    "Name": "wallmote 1",
+    "Muted": false,
+    "Failed": false,
+    "Removed": false,
+    "FailCount": 0,
+    "HasBattery": true,
+    "LastWakeUp": "2020-03-06T17:51:56.5432617+00:00",
+    "FirstContact": "2020-03-06T16:19:39.6190091+00:00",
+    "LastContact": "2020-03-06T17:51:59.3974582+00:00",
+    "CommandClasses": [
+      "Basic",
+      "SwitchBinary",
+      "SwitchMultiLevel",
+      "CentralScene",
+      "MultiChannel",
+      "Configuration",
+      "Alarm",
+      "ManufacturerSpecific",
+      "Battery",
+      "WakeUp",
+      "Association",
+      "Version",
+      "MultiChannelAssociation"
+    ],
+    "GenericType": "WallController",
+    "FirstAdded": "2020-03-06T08:17:48.0187922+00:00",
+    "BatteryReport": {
+      "Timestamp": "2020-03-06T17:51:59.3972551+00:00",
+      "Data": {
+        "Value": 72,
+        "IsLow": false
+      }
+    },
+    "ManufacturerReport": {
+      "Timestamp": "2020-03-06T17:51:59.2750716+00:00",
+      "Data": {
+        "ManufacturerID": 134,
+        "ProductType": 2,
+        "ProductID": 130
+      }
+    }
+  },
+  "19": {
+    "NodeID": 19,
+    "Name": "Node 19",
+    "Muted": false,
+    "Failed": false,
+    "Removed": false,
+    "FailCount": 0,
+    "HasBattery": false,
+    "FirstContact": "2020-03-06T08:19:02.7244022+00:00",
+    "LastContact": "2020-03-06T17:45:28.2157227+00:00",
+    "CommandClasses": [
+      "SwitchMultiLevel",
+      "Color",
+      "Configuration",
+      "ManufacturerSpecific",
+      "Association",
+      "Version"
+    ],
+    "GenericType": "RepeaterSlave",
+    "FirstAdded": "2020-03-06T08:17:48.1064486+00:00",
+    "ManufacturerReport": {
+      "Timestamp": "2020-03-06T17:45:28.4121414+00:00",
+      "Data": {
+        "ManufacturerID": 134,
+        "ProductType": 4,
+        "ProductID": 117
+      }
+    }
+  },
+  "20": {
+    "NodeID": 20,
+    "Name": "Node 20",
+    "Muted": false,
+    "Failed": false,
+    "Removed": false,
+    "FailCount": 0,
+    "HasBattery": false,
+    "FirstContact": "2020-03-06T08:19:11.4495174+00:00",
+    "LastContact": "2020-03-06T17:45:33.875902+00:00",
+    "CommandClasses": [
+      "SwitchMultiLevel",
+      "Color",
+      "Configuration",
+      "ManufacturerSpecific",
+      "Association",
+      "Version"
+    ],
+    "GenericType": "RepeaterSlave",
+    "FirstAdded": "2020-03-06T08:17:48.1994098+00:00",
+    "ManufacturerReport": {
+      "Timestamp": "2020-03-06T17:45:33.9738749+00:00",
+      "Data": {
+        "ManufacturerID": 134,
+        "ProductType": 4,
+        "ProductID": 117
+      }
+    }
+  },
+  "22": {
+    "NodeID": 22,
+    "Name": "Node 22",
+    "Muted": false,
+    "Failed": false,
+    "Removed": false,
+    "FailCount": 0,
+    "HasBattery": true,
+    "GenericType": "SensorMultiLevel",
+    "FirstAdded": "2020-03-06T08:17:48.2898075+00:00"
+  },
+  "23": {
+    "NodeID": 23,
+    "Name": "Node 23",
+    "Muted": false,
+    "Failed": true,
+    "Removed": false,
+    "FailCount": 0,
+    "HasBattery": true,
+    "LastWakeUp": "2020-03-06T18:01:58.9736946+00:00",
+    "FirstContact": "2020-03-06T18:01:54.7606252+00:00",
+    "LastContact": "2020-03-06T19:33:19.0970175+00:00",
+    "GenericType": "WallController",
+    "FirstAdded": "2020-03-06T08:17:48.3782637+00:00"
+  },
+  "24": {
+    "NodeID": 24,
+    "Name": "patio lights",
+    "Muted": false,
+    "Failed": false,
+    "Removed": false,
+    "FailCount": 0,
+    "HasBattery": false,
+    "FirstContact": "2020-03-06T08:19:17.4406082+00:00",
+    "LastContact": "2020-03-06T17:45:54.026912+00:00",
+    "CommandClasses": [
+      "Basic",
+      "SwitchMultiLevel",
+      "Color",
+      "Configuration",
+      "ManufacturerSpecific",
+      "Association",
+      "Version"
+    ],
+    "GenericType": "SwitchMultiLevel",
+    "FirstAdded": "2020-03-06T08:17:48.4724579+00:00",
+    "ManufacturerReport": {
+      "Timestamp": "2020-03-06T17:45:54.1995405+00:00",
+      "Data": {
+        "ManufacturerID": 305,
+        "ProductType": 2,
+        "ProductID": 3
+      }
+    }
+  },
+  "25": {
+    "NodeID": 25,
+    "Name": "Node 25",
+    "Muted": false,
+    "Failed": false,
+    "Removed": false,
+    "FailCount": 0,
+    "HasBattery": true,
+    "GenericType": "SensorMultiLevel",
+    "FirstAdded": "2020-03-06T08:17:48.5604341+00:00"
+  },
+  "26": {
+    "NodeID": 26,
+    "Name": "Node 26",
+    "Muted": false,
+    "Failed": false,
+    "Removed": false,
+    "FailCount": 0,
+    "HasBattery": true,
+    "GenericType": "SensorNotification",
+    "FirstAdded": "2020-03-06T08:32:06.1279345+00:00"
+  },
+  "27": {
+    "NodeID": 27,
+    "Name": "indoor porch light",
+    "Alias": "porch lights",
+    "Muted": false,
+    "Failed": false,
+    "Removed": false,
+    "FailCount": 0,
+    "HasBattery": false,
+    "FirstContact": "2020-03-06T08:32:09.2690878+00:00",
+    "LastContact": "2020-03-06T17:49:05.0464995+00:00",
+    "CommandClasses": [
+      "Basic",
+      "SwitchMultiLevel",
+      "Color",
+      "Configuration",
+      "ManufacturerSpecific",
+      "Association",
+      "Version"
+    ],
+    "GenericType": "SwitchMultiLevel",
+    "FirstAdded": "2020-03-06T08:32:06.2147266+00:00",
+    "ManufacturerReport": {
+      "Timestamp": "2020-03-06T17:49:05.2402074+00:00",
+      "Data": {
+        "ManufacturerID": 305,
+        "ProductType": 2,
+        "ProductID": 3
+      }
+    }
+  },
+  "28": {
+    "NodeID": 28,
+    "Name": "patio lights",
+    "Muted": false,
+    "Failed": false,
+    "Removed": false,
+    "FailCount": 0,
+    "HasBattery": false,
+    "FirstContact": "2020-03-06T08:32:30.1309246+00:00",
+    "LastContact": "2020-03-06T17:46:06.6232858+00:00",
+    "CommandClasses": [
+      "Basic",
+      "SwitchMultiLevel",
+      "Color",
+      "Configuration",
+      "ManufacturerSpecific",
+      "Association",
+      "Version"
+    ],
+    "GenericType": "SwitchMultiLevel",
+    "FirstAdded": "2020-03-06T08:32:06.305658+00:00",
+    "ManufacturerReport": {
+      "Timestamp": "2020-03-06T17:46:06.8795873+00:00",
+      "Data": {
+        "ManufacturerID": 305,
+        "ProductType": 2,
+        "ProductID": 3
+      }
+    }
+  },
+  "29": {
+    "NodeID": 29,
+    "Name": "snug lights",
+    "Muted": false,
+    "Failed": false,
+    "Removed": false,
+    "FailCount": 0,
+    "HasBattery": false,
+    "FirstContact": "2020-03-06T08:32:32.494188+00:00",
+    "LastContact": "2020-03-06T17:46:11.9856128+00:00",
+    "CommandClasses": [
+      "Basic",
+      "SwitchBinary",
+      "Configuration",
+      "Alarm",
+      "ManufacturerSpecific",
+      "Association",
+      "Version"
+    ],
+    "GenericType": "SwitchBinary",
+    "FirstAdded": "2020-03-06T08:32:06.395145+00:00",
+    "ManufacturerReport": {
+      "Timestamp": "2020-03-06T17:46:12.0861601+00:00",
+      "Data": {
+        "ManufacturerID": 96,
+        "ProductType": 4,
+        "ProductID": 8
+      }
+    }
+  },
+  "30": {
+    "NodeID": 30,
+    "Name": "Node 30",
+    "Muted": false,
+    "Failed": true,
+    "Removed": false,
+    "FirstFailed": "2020-03-06T08:32:41.2951138+00:00",
+    "LastFailed": "2020-03-06T17:48:00.9357162+00:00",
+    "FailCount": 5,
+    "HasBattery": false,
+    "GenericType": "SwitchBinary",
+    "FirstAdded": "2020-03-06T08:32:06.4845441+00:00"
+  },
+  "31": {
+    "NodeID": 31,
+    "Name": "driveway lights",
+    "Muted": false,
+    "Failed": false,
+    "Removed": false,
+    "FailCount": 0,
+    "HasBattery": false,
+    "FirstContact": "2020-03-06T08:32:51.4767971+00:00",
+    "LastContact": "2020-03-06T19:42:47.8047095+00:00",
+    "CommandClasses": [
+      "Basic",
+      "SwitchMultiLevel",
+      "SceneActivation",
+      "SensorMultiLevel",
+      "MultiChannel",
+      "Configuration",
+      "Alarm",
+      "ManufacturerSpecific",
+      "Association",
+      "Version",
+      "MultiChannelAssociation"
+    ],
+    "GenericType": "SwitchMultiLevel",
+    "FirstAdded": "2020-03-06T08:32:06.5746106+00:00",
+    "LuminanceReport": {
+      "Timestamp": "2020-03-06T19:42:47.8047073+00:00",
+      "Data": {
+        "Type": "Luminance",
+        "Value": 2.0,
+        "Unit": "lux",
+        "Scale": 1
+      }
+    },
+    "AlarmReport": {
+      "Timestamp": "2020-03-06T17:33:07.7979253+00:00",
+      "Data": {
+        "Type": "General",
+        "Level": 0,
+        "Detail": "None",
+        "Unknown": 0
+      }
+    },
+    "ManufacturerReport": {
+      "Timestamp": "2020-03-06T16:36:30.2150293+00:00",
+      "Data": {
+        "ManufacturerID": 625,
+        "ProductType": 1,
+        "ProductID": 6773
+      }
+    }
+  },
+  "32": {
+    "NodeID": 32,
+    "Name": "driveway lights",
+    "Muted": false,
+    "Failed": false,
+    "Removed": false,
+    "FailCount": 0,
+    "HasBattery": false,
+    "FirstContact": "2020-03-06T08:33:00.5670189+00:00",
+    "LastContact": "2020-03-06T19:37:48.422017+00:00",
+    "CommandClasses": [
+      "Basic",
+      "SwitchMultiLevel",
+      "SceneActivation",
+      "SensorMultiLevel",
+      "MultiChannel",
+      "Configuration",
+      "Alarm",
+      "ManufacturerSpecific",
+      "Association",
+      "Version",
+      "MultiChannelAssociation"
+    ],
+    "GenericType": "SwitchMultiLevel",
+    "FirstAdded": "2020-03-06T08:32:06.6684699+00:00",
+    "LuminanceReport": {
+      "Timestamp": "2020-03-06T19:37:48.4220116+00:00",
+      "Data": {
+        "Type": "Luminance",
+        "Value": 2.0,
+        "Unit": "lux",
+        "Scale": 1
+      }
+    },
+    "AlarmReport": {
+      "Timestamp": "2020-03-06T17:33:10.7855986+00:00",
+      "Data": {
+        "Type": "General",
+        "Level": 0,
+        "Detail": "None",
+        "Unknown": 0
+      }
+    },
+    "ManufacturerReport": {
+      "Timestamp": "2020-03-06T17:49:15.5967395+00:00",
+      "Data": {
+        "ManufacturerID": 625,
+        "ProductType": 1,
+        "ProductID": 6773
+      }
+    }
+  }
+}
